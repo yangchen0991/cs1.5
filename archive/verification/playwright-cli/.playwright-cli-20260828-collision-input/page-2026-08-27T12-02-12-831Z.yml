@@ -1,0 +1,29 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - heading "一人不撤" [level=1] [ref=e5]
+    - paragraph [ref=e6]: 港口集装箱仓库 · Web 射击 Demo
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]: 选择游戏地图
+        - generic [ref=e10]: 可选择
+      - radiogroup "开始地图" [ref=e11]:
+        - button "港口集装箱仓库 集装箱通道与高低掩体" [pressed] [ref=e12] [cursor=pointer]:
+          - generic [ref=e13]: 港口集装箱仓库
+          - generic [ref=e14]: 集装箱通道与高低掩体
+        - button "经典竞技场 西侧仓库、东侧仓库与中央长廊" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: 经典竞技场
+          - generic [ref=e17]: 西侧仓库、东侧仓库与中央长廊
+      - paragraph [ref=e18]: 当前选择：港口集装箱仓库
+    - button "点击开始" [ref=e19] [cursor=pointer]
+    - button "设置" [ref=e20] [cursor=pointer]
+    - generic [ref=e21]:
+      - generic [ref=e22]: WASD 移动 · 按住鼠标拖动 视角
+      - generic [ref=e23]: 左键 射击 · R 换弹 · Space 跳跃 · Shift/Ctrl 蹲伏
+      - generic [ref=e24]: Z 卧倒/起身 · 1/2/3 切换武器 · C 开镜 · Esc 暂停
+    - paragraph [ref=e25]: 消灭所有敌人，存活到回合结束即胜利
+  - generic:
+    - generic:
+      - generic: 📱
+      - heading "请横屏游戏" [level=2]
+      - paragraph: 将手机旋转为横屏，获得最佳射击体验
+      - button "仍然进入游戏" [ref=e26] [cursor=pointer]

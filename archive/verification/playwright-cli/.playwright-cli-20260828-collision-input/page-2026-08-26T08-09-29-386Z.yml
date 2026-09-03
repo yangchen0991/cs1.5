@@ -1,0 +1,35 @@
+- generic [ref=e2]:
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "100"
+      - generic:
+        - generic: 🛡
+        - generic: "100"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=e15] [cursor=pointer]: 1 Glock-18
+        - generic [ref=e16] [cursor=pointer]: 2 AK-47
+        - generic [ref=e17] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "2"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：2 名敌人
+    - generic:
+      - generic:
+        - button "FIRE" [ref=e19]
+        - button "跳" [ref=e20]
+        - button "蹲" [ref=e21]
+        - button "⟳" [ref=e22]
+        - button "换" [ref=e23]
+      - generic [ref=e24]:
+        - button "II" [ref=e25]
+        - button "⚙" [ref=e26]

@@ -1,0 +1,129 @@
+classDiagram
+    class WeaponSystem {
+        +scene
+        +camera
+        +player
+        +map
+        +enemies
+        +hud
+        +audio
+        +currentId
+        +state {id, mag, reserve}
+        +firing
+        +fireCooldown
+        +reloadTimer
+        +switching
+        +_switchAnim
+        +_spreadCurrent
+        +_reloadPhase
+        +_viewModels {usp, ak47}
+        +_tracers
+        +_impacts
+        +_hitSparks
+        +raycaster
+        +_freshState(id)
+        +setFiring(v)
+        +triggerSemi()
+        +switchTo(id)
+        +startReload()
+        +_finishReload()
+        +update(dt)
+        +_fire()
+        +_hitscan(origin, dir, range) hit
+        +_damageForPart(w, part, dist) int
+        +_updateViewModel(dt)
+        +_updateSwitchAnim(dt)
+        +_buildGunMesh(id) Group
+        +_spawnTracer(from, to)
+        +_spawnImpact(point, normal)
+        +_spawnHitSpark(point, normal, part)
+        +_spawnMuzzleFlash()
+        +reset()
+        +dispose()
+    }
+
+    class HUD {
+        +el
+        +crosshair
+        +ammoMag
+        +ammoReserve
+        +weaponSlots
+        +killFeedEl
+        +toastEl
+        +audio
+        +_hitmarkerEl
+        +_dmgPool
+        +updateVitals(hp, armor)
+        +updateWeapon(w, state)
+        +updateScore(enemiesLeft, kills, wave)
+        +crosshairFire(spread)
+        +setCrosshairSpread(rad)
+        +hitMarker(part, killed)
+        +killFeed(name, weaponName, headshot)
+        +showDamageNumber(amount, x, y, isHead)
+        +setAmmoWarning(mode)
+        +worldToScreen(point, camera) Vector2
+        +toast(msg, kind)
+        +damageFlash()
+        +drawMinimap()
+    }
+
+    class AudioFX {
+        +ctx
+        +master
+        +enabled
+        +init()
+        +shot(weaponId)
+        +dryFire()
+        +reloadPhase(phase)
+        +switch(weaponId)
+        +hit(head, killed)
+        +wallHit(type)
+        +enemyShot()
+        +hurt()
+        +heal()
+        +wave(n)
+        +win()
+        +lose()
+    }
+
+    class Player {
+        +position
+        +velocity
+        +yaw
+        +pitch
+        +health
+        +armor
+        +alive
+        +recoilOffset
+        +applyRecoil(recoilDef)
+        +takeDamage(amount)
+        +getAimRay() {origin, direction}
+        +update(dt)
+    }
+
+    class Enemy {
+        +mesh
+        +hitMeshes[]
+        +alive
+        +health
+        +name
+        +takeDamage(amount, part) bool
+        +update(dt)
+    }
+
+    class GameMap {
+        +boxes[]
+        +collide(x, z, radius)
+        +raycast(origin, dir, maxDist)
+        +raycastDetailed(origin, dir, maxDist) {t, normal}
+    }
+
+    WeaponSystem --> HUD : 调用视觉方法
+    WeaponSystem --> AudioFX : 调用音效方法
+    WeaponSystem --> Player : getAimRay / applyRecoil
+    WeaponSystem --> GameMap : raycastDetailed
+    WeaponSystem --> Enemy : takeDamage
+    HUD --> AudioFX : 仅保留 damageFlash/hurt 场景（可选）
+    Enemy --> Player : takeDamage
+    Enemy --> GameMap : collide / raycast

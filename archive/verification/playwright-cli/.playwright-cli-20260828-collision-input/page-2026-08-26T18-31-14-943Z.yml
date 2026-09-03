@@ -1,0 +1,25 @@
+- generic [ref=f4e2]:
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "100"
+      - generic:
+        - generic: 🛡
+        - generic: "100"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=f4e14] [cursor=pointer]: 1 Glock-18
+        - generic [ref=f4e15] [cursor=pointer]: 2 AK-47
+        - generic [ref=f4e16] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "2"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：2 名敌人

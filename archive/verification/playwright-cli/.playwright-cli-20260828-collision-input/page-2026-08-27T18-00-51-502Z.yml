@@ -1,0 +1,22 @@
+- generic [ref=f1e4]:
+  - heading "一人不撤" [level=1] [ref=f1e5]
+  - paragraph [ref=f1e6]: 港口集装箱仓库 · Web 射击 Demo
+  - generic [ref=f1e7]:
+    - generic [ref=f1e8]:
+      - generic [ref=f1e9]: 选择游戏地图
+      - generic [ref=f1e10]: 可选择
+    - radiogroup "开始地图" [ref=f1e11]:
+      - button "港口集装箱仓库 集装箱通道与高低掩体" [pressed] [ref=f1e12] [cursor=pointer]:
+        - generic [ref=f1e13]: 港口集装箱仓库
+        - generic [ref=f1e14]: 集装箱通道与高低掩体
+      - button "经典竞技场 西侧仓库、东侧仓库与中央长廊" [ref=f1e15] [cursor=pointer]:
+        - generic [ref=f1e16]: 经典竞技场
+        - generic [ref=f1e17]: 西侧仓库、东侧仓库与中央长廊
+    - paragraph [ref=f1e18]: 当前选择：港口集装箱仓库
+  - button "点击开始" [ref=f1e19] [cursor=pointer]
+  - button "设置" [ref=f1e20] [cursor=pointer]
+  - generic [ref=f1e21]:
+    - generic [ref=f1e22]: WASD 移动 · 按住鼠标拖动 视角
+    - generic [ref=f1e23]: 左键 射击 · R 换弹 · Space 跳跃 · Shift/Ctrl 蹲伏
+    - generic [ref=f1e24]: Z 卧倒/起身 · 1/2/3 切换武器 · C 开镜 · Esc 暂停
+  - paragraph [ref=f1e25]: 消灭所有敌人，存活到回合结束即胜利

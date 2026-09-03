@@ -1,0 +1,71 @@
+- generic [ref=e2]:
+  - generic [ref=e42]:
+    - heading "设置" [level=2] [ref=e43]
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]: 游戏地图
+        - generic [ref=e47]: 本局已锁定
+      - radiogroup "设置地图" [ref=e48]:
+        - button "港口集装箱仓库 集装箱通道与高低掩体" [disabled] [pressed] [ref=e49]:
+          - generic [ref=e50]: 港口集装箱仓库
+          - generic [ref=e51]: 集装箱通道与高低掩体
+        - button "经典竞技场 西侧仓库、东侧仓库与中央长廊" [disabled] [ref=e52]:
+          - generic [ref=e53]: 经典竞技场
+          - generic [ref=e54]: 西侧仓库、东侧仓库与中央长廊
+      - paragraph [ref=e55]: 地图已锁定，玩家阵亡后才能重新选择。
+    - generic [ref=e56]:
+      - generic [ref=e57]: 按钮大小
+      - slider "按钮大小" [ref=e58] [cursor=pointer]: "100"
+      - generic [ref=e59]: 100%
+    - generic [ref=e60]:
+      - generic [ref=e61]: 转身灵敏度
+      - slider "转身灵敏度" [ref=e62] [cursor=pointer]: "100"
+      - generic [ref=e63]: 100%
+    - generic [ref=e64]:
+      - generic [ref=e65]: 准星样式
+      - radiogroup "准星样式" [ref=e66]:
+        - button "经典十字" [pressed] [ref=e67] [cursor=pointer]
+        - button "点式" [ref=e69] [cursor=pointer]
+        - button "圆环" [ref=e71] [cursor=pointer]
+        - button "实心十字" [ref=e73] [cursor=pointer]
+        - button "战术十字点" [ref=e75] [cursor=pointer]
+    - button "自定义按钮位置" [ref=e77] [cursor=pointer]
+    - button "恢复默认布局" [ref=e78] [cursor=pointer]
+    - button "关闭" [ref=e79] [cursor=pointer]
+    - paragraph [ref=e80]: 自定义布局会保存在本机，随时可改
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "100"
+      - generic:
+        - generic: 🛡
+        - generic: "100"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=e28] [cursor=pointer]: 1 Glock-18
+        - generic [ref=e29] [cursor=pointer]: 2 AK-47
+        - generic [ref=e30] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "2"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：2 名敌人
+    - generic:
+      - generic:
+        - button "FIRE" [ref=e32]
+        - button "跳" [ref=e33]
+        - button "蹲" [ref=e34]
+        - button "卧" [ref=e35]
+        - button "⟳" [ref=e36]
+        - button "换" [ref=e37]
+      - generic [ref=e38]:
+        - button "II" [ref=e39]
+        - button "⚙" [ref=e40]
+    - generic: 视口 932×430 | 内容 932×430 | 缩放 0.93 | 旋转 关 | DPR 3

@@ -1,0 +1,120 @@
+{
+  "file": "J:\\武器\\人体\\20260824113019_9d67c06e.fbx",
+  "bytes": 3292748,
+  "sha256": "e647d84d9028e9f1405a1ea0faeb8d2afc23dded28df353a27f20db6ab316f6b",
+  "fbxVersion": 7400,
+  "topLevelNodes": [
+    "FBXHeaderExtension",
+    "FileId",
+    "CreationTime",
+    "Creator",
+    "GlobalSettings",
+    "Documents",
+    "References",
+    "Definitions",
+    "Objects",
+    "Connections",
+    "Takes"
+  ],
+  "objectCounts": {
+    "Geometry": 1,
+    "Model": 1,
+    "Material": 1
+  },
+  "classCounts": {
+    "Mesh": 2
+  },
+  "globalSettings": {
+    "UpAxis": 1,
+    "UpAxisSign": 1,
+    "FrontAxis": 2,
+    "FrontAxisSign": 1,
+    "CoordAxis": 0,
+    "CoordAxisSign": 1,
+    "UnitScaleFactor": 1.0,
+    "OriginalUnitScaleFactor": 1.0,
+    "TimeMode": 11
+  },
+  "models": [
+    {
+      "id": 878018350,
+      "name": "node_0::Model",
+      "class": "Mesh",
+      "translation": null,
+      "rotation": [
+        -4.3257111045250854e-06,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ]
+    }
+  ],
+  "modelHierarchy": [],
+  "geometries": [
+    {
+      "id": 324392212,
+      "name": "node_0::Geometry",
+      "class": "Mesh",
+      "controlPoints": 24990,
+      "polygonVertexIndices": 150024,
+      "polygons": 50008,
+      "normals": 24990,
+      "normalIndices": 24990,
+      "normalMapping": "ByVertice",
+      "normalReference": "IndexToDirect",
+      "uvs": 35606,
+      "uvIndices": 150024,
+      "uvMapping": "ByPolygonVertex",
+      "uvReference": "IndexToDirect"
+    }
+  ],
+  "deformers": [],
+  "materials": [
+    {
+      "id": 734261511,
+      "name": "Material::Material",
+      "class": "",
+      "properties": {
+        "DiffuseColor": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ],
+        "EmissiveColor": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "EmissiveFactor": 0.0,
+        "AmbientColor": [
+          0.05087608844041824,
+          0.05087608844041824,
+          0.05087608844041824
+        ],
+        "AmbientFactor": 0.0,
+        "BumpFactor": 0.0,
+        "SpecularColor": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ],
+        "SpecularFactor": 0.0,
+        "Shininess": 0.0,
+        "ShininessExponent": 0.0,
+        "ReflectionColor": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ],
+        "ReflectionFactor": 0.0
+      }
+    }
+  ],
+  "textures": [],
+  "animations": [],
+  "connectionCount": 3
+}

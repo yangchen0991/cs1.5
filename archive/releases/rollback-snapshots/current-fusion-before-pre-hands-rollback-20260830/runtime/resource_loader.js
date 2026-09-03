@@ -1,0 +1,174 @@
+// resource_loader.js —— 小工具包内资源分段调度器
+// 只加载 ZIP 内的经典脚本和图片；不使用网络、模块、Worker 或动态代码执行。
+(function (root) {
+  'use strict';
+
+  const loadedScripts = new Set();
+  const pendingScripts = new Map();
+  const loadedImages = new Map();
+  const pendingImages = new Map();
+
+  const boot = root.CS15_BOOT || {
+    startedAt: (root.performance && performance.now) ? performance.now() : Date.now(),
+    marks: {},
+  };
+  root.CS15_BOOT = boot;
+
+  function now() {
+    return (root.performance && performance.now) ? performance.now() : Date.now();
+  }
+
+  function mark(name) {
+    const value = now() - boot.startedAt;
+    boot.marks[name] = Math.round(value * 10) / 10;
+    if (root.performance && typeof performance.mark === 'function') {
+      try { performance.mark(`cs15:${name}`); } catch (error) { /* 旧 WebView 可忽略 */ }
+    }
+    return boot.marks[name];
+  }
+
+  function isTouchDevice() {
+    return ('ontouchstart' in root)
+      || (root.navigator && Number(root.navigator.maxTouchPoints) > 0)
+      || !!(root.matchMedia && root.matchMedia('(pointer: coarse)').matches);
+  }
+
+  function nextPaint() {
+    return new Promise((resolve) => {
+      if (typeof root.requestAnimationFrame === 'function') root.requestAnimationFrame(() => resolve());
+      else root.setTimeout(resolve, 0);
+    });
+  }
+
+  function loadScript(file) {
+    if (loadedScripts.has(file)) return Promise.resolve(file);
+    if (pendingScripts.has(file)) return pendingScripts.get(file);
+    const promise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `./${file}`;
+      script.async = false;
+      script.onload = () => {
+        loadedScripts.add(file);
+        pendingScripts.delete(file);
+        resolve(file);
+      };
+      script.onerror = () => {
+        pendingScripts.delete(file);
+        reject(new Error(`包内脚本加载失败：${file}`));
+      };
+      document.head.appendChild(script);
+    });
+    pendingScripts.set(file, promise);
+    return promise;
+  }
+
+  function loadImage(path) {
+    if (loadedImages.has(path)) return Promise.resolve(path);
+    if (pendingImages.has(path)) return pendingImages.get(path);
+    const promise = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        const finish = () => {
+          // 保留已解码 Image 引用，避免加载页结束后立刻被回收并在 TextureLoader
+          // 再次访问同一包内图片时重复解码。
+          loadedImages.set(path, image);
+          pendingImages.delete(path);
+          resolve(path);
+        };
+        if (typeof image.decode === 'function') image.decode().then(finish, finish);
+        else finish();
+      };
+      image.onerror = () => {
+        pendingImages.delete(path);
+        reject(new Error(`包内图片加载失败：${path}`));
+      };
+      image.src = `./${path}`;
+    });
+    pendingImages.set(path, promise);
+    return promise;
+  }
+
+  function mergeDesktopEnemyLod() {
+    const model = root.CS15_ENEMY_MODEL;
+    const high = root.CS15_ENEMY_MODEL_HD_LOD0;
+    if (!model || !high || !Array.isArray(model.lods)) return;
+    if (!model.lods.some((lod) => lod && lod.triangleCount === high.triangleCount)) {
+      model.lods.unshift(high);
+    }
+  }
+
+  function scriptPlan(mapId) {
+    const touch = isTouchDevice();
+    const scripts = ['math2d.js'];
+    if (!touch) scripts.push('forge.js');
+    scripts.push('hands_model.js', 'hands_tex.js');
+    scripts.push('ak47_model.js', 'ak47_tex.js', 'awp_model.js', 'awp_tex.js');
+    scripts.push('enemy_model.js');
+    if (!touch) scripts.push('enemy_model_hd.js');
+    scripts.push('enemy_rig.js');
+    if (mapId === 'container-port') {
+      scripts.push('map_model.js', 'map_collision.js', 'map_assets.js');
+    }
+    scripts.push('textures.js', 'environment_materials.js');
+    scripts.push('map.js', 'player.js', 'enemy.js', 'weapon.js', 'pickup.js');
+    return scripts;
+  }
+
+  function imagePlan(mapId) {
+    const images = [
+      'enemy_albedo.webp',
+      'hands_albedo.webp',
+      'ak47_albedo.webp', 'ak47_normal.webp', 'ak47_mr.webp',
+      'awp_albedo.webp', 'awp_normal.webp', 'awp_mr.webp',
+      'env_brick.webp', 'env_concrete.jpg', 'env_crate_wood.webp',
+    ];
+    if (!root.CS15_LOWEND) {
+      images.push('enemy_normal.webp', 'enemy_orm.webp');
+      images.push('hands_normal.webp', 'hands_mr.webp');
+    }
+    if (mapId === 'container-port') {
+      images.push('port_base.webp');
+      if (!root.CS15_LOWEND) images.push('port_normal.webp', 'port_mr.webp');
+    }
+    return images;
+  }
+
+  async function loadForMap(mapId, options) {
+    const onProgress = options && typeof options.onProgress === 'function'
+      ? options.onProgress : function () {};
+    const scripts = scriptPlan(mapId);
+    const images = imagePlan(mapId);
+    const total = scripts.length + images.length;
+    let completed = 0;
+    const report = (label) => {
+      completed++;
+      onProgress({ completed, total, ratio: total ? completed / total : 1, label });
+    };
+
+    mark('runtime_load_start');
+    for (const file of scripts) {
+      await loadScript(file);
+      if (file === 'enemy_model_hd.js') mergeDesktopEnemyLod();
+      report(file);
+      await nextPaint();
+    }
+    if (!isTouchDevice()) mergeDesktopEnemyLod();
+
+    if (root.THREE && root.THREE.Cache) root.THREE.Cache.enabled = true;
+    for (const path of images) {
+      await loadImage(path);
+      report(path);
+      await nextPaint();
+    }
+    mark('runtime_assets_ready');
+    return { mapId, scripts: scripts.slice(), images: images.slice() };
+  }
+
+  mark('resource_loader_ready');
+  root.CS15ResourceLoader = Object.freeze({
+    loadForMap,
+    isTouchDevice,
+    mark,
+    metrics: boot,
+  });
+})(window);

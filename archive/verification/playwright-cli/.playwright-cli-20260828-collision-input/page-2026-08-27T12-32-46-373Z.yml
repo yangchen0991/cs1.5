@@ -1,0 +1,41 @@
+- generic [ref=e2]:
+  - generic [ref=e42]:
+    - heading "已暂停" [level=2] [ref=e43]
+    - button "继续游戏" [ref=e44] [cursor=pointer]
+    - button "设置" [ref=e45] [cursor=pointer]
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "100"
+      - generic:
+        - generic: 🛡
+        - generic: "100"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=e28] [cursor=pointer]: 1 Glock-18
+        - generic [ref=e29] [cursor=pointer]: 2 AK-47
+        - generic [ref=e30] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "3"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：3 名敌人
+    - generic:
+      - generic:
+        - button "FIRE" [ref=e32]
+        - button "跳" [ref=e33]
+        - button "蹲" [ref=e34]
+        - button "卧" [ref=e35]
+        - button "⟳" [ref=e36]
+        - button "换" [ref=e37]
+      - generic [ref=e38]:
+        - button "II" [ref=e39]
+        - button "⚙" [ref=e40]
+    - generic: 视口 1024×768 | 内容 1024×768 | 缩放 1.35 | 旋转 关 | DPR 2

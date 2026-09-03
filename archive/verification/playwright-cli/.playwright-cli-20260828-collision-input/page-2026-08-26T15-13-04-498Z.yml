@@ -1,0 +1,26 @@
+- generic [ref=e2]:
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "100"
+      - generic:
+        - generic: 🛡
+        - generic: "100"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=e14] [cursor=pointer]: 1 Glock-18
+        - generic [ref=e15] [cursor=pointer]: 2 AK-47
+        - generic [ref=e16] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "3"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：3 名敌人
+    - generic: 视口 1280×720 | 内容 1280×720 | 缩放 1.00 | 旋转 关 | DPR 1

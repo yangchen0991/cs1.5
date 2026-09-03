@@ -1,0 +1,36 @@
+- generic [ref=f1e2]:
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "96"
+      - generic:
+        - generic: 🛡
+        - generic: "96"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=f1e15] [cursor=pointer]: 1 Glock-18
+        - generic [ref=f1e16] [cursor=pointer]: 2 AK-47
+        - generic [ref=f1e17] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "3"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：3 名敌人
+    - generic:
+      - generic:
+        - button "FIRE" [ref=f1e19]
+        - button "跳" [ref=f1e20]
+        - button "蹲" [ref=f1e21]
+        - button "⟳" [ref=f1e22]
+        - button "换" [ref=f1e23]
+      - generic [ref=f1e24]:
+        - button "II" [ref=f1e25]
+        - button "⚙" [ref=f1e26]
+    - generic: 视口 360×732 | 内容 732×360 | 缩放 0.78 | 旋转 开 | DPR 3

@@ -1,0 +1,53 @@
+{
+  "pipeline": "balanced-hybrid-rig-v2",
+  "sourceDirectory": "J:\\武器\\人体",
+  "sourceHashes": {
+    "fbx": "e647d84d9028e9f1405a1ea0faeb8d2afc23dded28df353a27f20db6ab316f6b",
+    "albedo": "c1e66670cb84ea7428564e001b94c993ca6da0b98a97a477b3f733ffc149094d",
+    "metallic": "7e55a046537b58b5c56ae54428fa34a3dcf518233d0755441c6909eec55ba94e",
+    "normal": "d9e361dcb1fffd1baf71b7c41b73d5a1c38c04edc1a2d65d16031520c3a02452",
+    "roughness": "7e5617e5f01bbdd379f3e3d7d0ec69591f3c1d27dc6abec4fad71f31292c2421"
+  },
+  "model": {
+    "file": "enemy_model.js",
+    "bytes": 2031121,
+    "sha256": "fd7214d8a8b4e97ba9860166092dc04dc774945449a60fe805524199b8aa897d",
+    "lods": [
+      {
+        "vertices": 35606,
+        "triangles": 50008,
+        "clusterCell": 0.0,
+        "skinWeights": "offline-semantic-2"
+      },
+      {
+        "vertices": 14582,
+        "triangles": 17990,
+        "clusterCell": 0.024148979187011716,
+        "skinWeights": "offline-semantic-2"
+      },
+      {
+        "vertices": 4287,
+        "triangles": 3999,
+        "clusterCell": 0.06346200942993163,
+        "skinWeights": "offline-semantic-2"
+      }
+    ]
+  },
+  "textures": {
+    "albedo": {
+      "file": "enemy_albedo.webp",
+      "bytes": 58376,
+      "sha256": "4254864cd5f80988e624a73e0e7d07ed4d2c5ab65621009ff5542037d9e4367a"
+    },
+    "normal": {
+      "file": "enemy_normal.webp",
+      "bytes": 41158,
+      "sha256": "46a7d2e14fa9f1fb77db73ed847fe8dfd56cf43dd97a948fd2866c96bef6eefb"
+    },
+    "orm": {
+      "file": "enemy_orm.webp",
+      "bytes": 10664,
+      "sha256": "32b44b9a9dbe73291d6890bb54a7807cfc7384e5749e97a6e0f767f3b5dbc3df"
+    }
+  }
+}

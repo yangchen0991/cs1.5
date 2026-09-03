@@ -1,0 +1,9 @@
+- generic [ref=e4]:
+  - heading "CS 1.5" [level=1] [ref=e5]
+  - paragraph [ref=e6]: 港口集装箱仓库 · Web 射击 Demo
+  - button "点击开始" [ref=e7] [cursor=pointer]
+  - generic [ref=e8]:
+    - generic [ref=e9]: WASD 移动 · 按住鼠标拖动 视角
+    - generic [ref=e10]: 左键 射击 · R 换弹 · Space 跳跃
+    - generic [ref=e11]: 1/2/3 切换武器 · C 开镜 · Esc 暂停
+  - paragraph [ref=e12]: 消灭所有敌人，存活到回合结束即胜利

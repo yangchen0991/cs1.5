@@ -1,0 +1,983 @@
+// enemy.js —— 敌方机器人
+// 行为：巡逻/追击玩家、视线检测（被墙挡住则看不见）、点射开火、受击掉血、死亡倒地
+// 寻路采用简化方案：朝玩家方向直线移动 + 遇墙后斜向绕行（不做完整 A*）
+// 经典脚本（非 ES Module）：THREE / CONFIG 由前置脚本挂到 window 提供
+
+class Enemy {
+  constructor(scene, gameMap, player, hud, opts = {}) {
+    this.scene = scene;
+    this.map = gameMap;
+    this.player = player;
+    this.hud = hud;
+    this.pickups = opts.pickups || null;   // 拾取系统（敌人死亡掉落护甲用）
+
+    this.name = opts.name || 'Phantom';
+    this.height = CONFIG.enemy.height;
+    this.radius = CONFIG.enemy.radius;
+    this.maxHealth = opts.hp || CONFIG.enemy.maxHealth;
+    this.health = this.maxHealth;
+    this.speed = opts.speed || CONFIG.enemy.moveSpeed;
+    this.alive = true;
+
+    // 分层强化（tier 0 普通 / 1 精英 / 2 王牌，由波次进度决定）
+    this.tier = opts.tier || 0;
+    const T = (CONFIG.enemyTiers && CONFIG.enemyTiers[this.tier]) || {};
+    this.tierLabel = T.label || '';
+    this.burstBonus = T.burstBonus || 0;            // 点射延长
+    this.fireIntervalMul = T.fireIntervalMul != null ? T.fireIntervalMul : 1;  // 开火更快
+    this.hitChanceAdd = T.hitChanceAdd || 0;        // 命中更高
+    this.damageAdd = T.damageAdd || 0;              // 单发更痛
+    this.canRush = !!T.rush;                        // 冲刺突进
+    this.canPush = !!T.push;                        // 近身不后撤、压近
+    this.canMelee = !!T.melee;                      // 近战重击
+    this.meleeDamage = T.meleeDamage || 14;
+    this.rushCooldown = 2.5 + Math.random() * 3;    // 首次冲锋随机延迟
+    this.rushTime = 0;
+    this.meleeCooldown = 0;
+
+    // 敌人也受弹药经济约束：一个弹匣打完必须读条换弹，备弹用尽后才会寻找地图补给。
+    const ammoCfg = CONFIG.enemy.ammo || {};
+    this.magazineSize = Math.max(1, Math.floor(Number(ammoCfg.magazineSize) || 18));
+    this.reserveMax = Math.max(this.magazineSize, Math.floor(Number(ammoCfg.reserveSize) || this.magazineSize * 3));
+    this.magazine = this.magazineSize;
+    this.reserve = this.reserveMax;
+    this.reloadTimer = 0;
+    this._ammoTarget = null;
+    this._ammoSearchTimer = Math.random() * (Number(ammoCfg.searchInterval) || 0.45);
+    this._ammoPickupCooldown = 0;
+
+    this.position = new THREE.Vector3();
+    this.velocity = new THREE.Vector3();
+    this.facing = Math.PI;       // 朝向（绕 Y）
+
+    // AI 状态
+    this.state = 'idle';         // idle / engage / dead
+    this.seePlayer = false;
+    this.lastSeenPos = new THREE.Vector3();
+    this.reactionTimer = 0;
+    this.fireCooldown = 0;
+    this.burstLeft = 0;
+    this.burstTimer = 0;
+    this.strafeDir = Math.random() < 0.5 ? 1 : -1;
+    this.strafeTimer = 1 + Math.random() * 2;
+    this.deathTimer = 0;
+
+    // 卡墙防御状态
+    this._lastPos = new THREE.Vector3();
+    this._stuckTimer = 0;
+    this._escapeTimer = 0;
+    this._escapeDir = 0;
+    this._wantsMove = false;
+
+    // 高频 AI 计算复用临时向量，避免普通安卓在战斗中持续触发垃圾回收卡顿。
+    this._tmpEye = new THREE.Vector3();
+    this._tmpTo = new THREE.Vector3();
+    this._tmpFlat = new THREE.Vector3();
+    this._tmpFwd = new THREE.Vector3();
+    this._tmpDir = new THREE.Vector3();
+    this._tmpMove = new THREE.Vector3();
+    this._tmpAux = new THREE.Vector3();
+    this._eye2 = { x: 0, z: 0 };
+    this._target2 = { x: 0, z: 0 };
+    this._seeTimer = Math.random() * 0.12;
+    this._avoidTimer = Math.random() * 0.1;
+
+    this._buildMesh();
+  }
+
+  _buildMesh() {
+    if (!window.CS15EnemyRig || !window.CS15EnemyRig.available) {
+      this._buildLegacyMesh();
+      return;
+    }
+    try {
+      const instance = window.CS15EnemyRig.create({ tier: this.tier, name: this.name });
+      if (!instance) {
+        this._buildLegacyMesh();
+        return;
+      }
+      const g = instance.root;
+      this._rigInstance = instance;
+      this._sharedEnemyAssets = true;
+
+      // 血条仍属于敌人实例；人体、护甲、贴图和命中代理由共享骨骼系统管理。
+      const barCanvas = document.createElement('canvas');
+      barCanvas.width = 64; barCanvas.height = 8;
+      this._barCanvas = barCanvas;
+      this._barCtx = barCanvas.getContext('2d');
+      this._barTex = new THREE.CanvasTexture(barCanvas);
+      const barMat = new THREE.SpriteMaterial({ map: this._barTex, depthTest: false });
+      this._barSprite = new THREE.Sprite(barMat);
+      this._barSprite.scale.set(1.2, 0.15, 1);
+      this._barSprite.position.y = 2.1;
+      this._barSprite.visible = false;
+      g.add(this._barSprite);
+      this._drawBar();
+
+      if (window.CS15_LOWEND) {
+        const blobGeo = new THREE.CircleGeometry(0.55, 16);
+        const blobMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
+        const blob = new THREE.Mesh(blobGeo, blobMat);
+        blob.rotation.x = -Math.PI / 2;
+        blob.position.y = 0.02;
+        g.add(blob);
+        this._contactShadow = blob;
+      }
+
+      this.mesh = g;
+      this.scene.add(g);
+      this.hitMeshes = instance.hitMeshes;
+      for (const mesh of this.hitMeshes) mesh.userData.enemy = this;
+      this._walkPhase = 0;
+    } catch (error) {
+      console.warn('[Enemy] 平衡骨骼模型创建失败，回退旧模型：', error);
+      this._rigInstance = null;
+      this._sharedEnemyAssets = false;
+      this._buildLegacyMesh();
+    }
+  }
+
+  _buildLegacyMesh() {
+    const g = new THREE.Group();
+
+    // 材质（偏真实人体：战术装甲灰蓝 + 皮肤 + 深色衣裤 + 靴子）
+    const armorMat = new THREE.MeshStandardMaterial({ color: 0x4f5a68, roughness: 0.55, metalness: 0.25 });
+    const armorDarkMat = new THREE.MeshStandardMaterial({ color: 0x3c4652, roughness: 0.6, metalness: 0.2 });
+    const clothMat = new THREE.MeshStandardMaterial({ color: 0x383c42, roughness: 0.85 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd9b892, roughness: 0.6 });
+    const bootMat = new THREE.MeshStandardMaterial({ color: 0x181a1e, roughness: 0.8 });
+    const visorMat = new THREE.MeshStandardMaterial({ color: 0x0d1116, roughness: 0.15, metalness: 0.7 });
+    const gunMat = new THREE.MeshStandardMaterial({ color: 0x1f1f24, roughness: 0.55, metalness: 0.35 });
+    const gunWoodMat = new THREE.MeshStandardMaterial({ color: 0x4a3826, roughness: 0.8 });
+
+    // ---- 头 + 面罩 + 头盔 ----
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 12), skinMat);
+    head.position.y = 1.74;
+    head.castShadow = true;
+    g.add(head);
+
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.06), visorMat);
+    visor.position.set(0, 1.74, -0.14);
+    g.add(visor);
+
+    const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), armorMat);
+    helmet.position.y = 1.75;
+    g.add(helmet);
+
+    // ---- 颈 ----
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.12, 8), skinMat);
+    neck.position.y = 1.56;
+    g.add(neck);
+
+    // ---- 躯干（胸甲方体）+ 护肩 + 髋部 ----
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.28), armorMat);
+    torso.position.y = 1.26;
+    torso.castShadow = true;
+    g.add(torso);
+
+    const chestPlate = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.16, 0.3), armorDarkMat);
+    chestPlate.position.y = 1.36;
+    g.add(chestPlate);
+
+    const hips = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.18, 0.22), clothMat);
+    hips.position.y = 0.94;
+    g.add(hips);
+
+    const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), armorMat);
+    shoulderL.position.set(-0.3, 1.5, 0);
+    g.add(shoulderL);
+    const shoulderR = shoulderL.clone();
+    shoulderR.position.x = 0.3;
+    g.add(shoulderR);
+
+    // ---- 手臂（上臂 + 前臂 + 手，前伸持枪） ----
+    const armL = this._buildArm(armorMat, clothMat, skinMat, -1);
+    const armR = this._buildArm(armorMat, clothMat, skinMat, 1);
+    g.add(armL.group); g.add(armR.group);
+
+    // ---- 腿（大腿 + 小腿 + 脚，髋部为摆动轴） ----
+    const legL = this._buildLeg(clothMat, bootMat, -1);
+    const legR = this._buildLeg(clothMat, bootMat, 1);
+    g.add(legL.group); g.add(legR.group);
+    this._legL = legL.group;
+    this._legR = legR.group;
+
+    // ---- 步枪（机匣 + 枪管 + 弹匣 + 枪托） ----
+    const gun = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.13, 0.55), gunMat);
+    gun.position.set(0.03, 1.28, -0.38);
+    gun.castShadow = true;
+    g.add(gun);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.42, 8), gunMat);
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.set(0.03, 1.3, -0.82);
+    g.add(barrel);
+    const magBox = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.2, 0.1), gunWoodMat);
+    magBox.position.set(0.03, 1.13, -0.3);
+    magBox.rotation.x = 0.25;
+    g.add(magBox);
+    const stock = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.11, 0.26), gunWoodMat);
+    stock.position.set(0.03, 1.24, -0.02);
+    g.add(stock);
+    const gunParts = [gun, barrel, magBox, stock];
+
+    // 血条（精灵，始终面向相机）
+    const barCanvas = document.createElement('canvas');
+    barCanvas.width = 64; barCanvas.height = 8;
+    this._barCanvas = barCanvas;
+    this._barCtx = barCanvas.getContext('2d');
+    this._barTex = new THREE.CanvasTexture(barCanvas);
+    const barMat = new THREE.SpriteMaterial({ map: this._barTex, depthTest: false });
+    this._barSprite = new THREE.Sprite(barMat);
+    this._barSprite.scale.set(1.2, 0.15, 1);
+    this._barSprite.position.y = 2.1;
+    this._barSprite.visible = false;
+    g.add(this._barSprite);
+    this._drawBar();
+    // 接触阴影（GameFactory 框架 createContactShadow 思路）：低端机关阴影时，
+    // 用 1 个半透明圆盘接地，敌人不至于"飘在空中"（随 mesh 移动自动跟随）
+    if (window.CS15_LOWEND) {
+      const blobGeo = new THREE.CircleGeometry(0.55, 16);
+      const blobMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
+      const blob = new THREE.Mesh(blobGeo, blobMat);
+      blob.rotation.x = -Math.PI / 2;
+      blob.position.y = 0.02;
+      g.add(blob);
+    }
+
+    this.mesh = g;
+    this.scene.add(g);
+
+    // ---- 精英/王牌视觉标识（tier 1 金色面罩+头盔脊；tier 2 红色面罩+光环）----
+    if (this.tier > 0) {
+      const tierColor = this.tier === 2 ? 0xe03030 : 0xe0a030;   // 王牌红 / 精英金
+      const visorRecolor = new THREE.MeshStandardMaterial({
+        color: tierColor, roughness: 0.25, metalness: 0.7,
+        emissive: tierColor, emissiveIntensity: 0.5,
+      });
+      visor.material.dispose();
+      visor.material = visorRecolor;
+
+      // 头盔脊（一条沿头顶的凸起，精英细、王牌粗）
+      const crest = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.05, 0.34),
+        new THREE.MeshStandardMaterial({ color: tierColor, roughness: 0.4, metalness: 0.6 })
+      );
+      crest.position.set(0, 1.86, -0.02);
+      if (this.tier === 2) crest.scale.set(1, 1.6, 1);   // 王牌脊更粗高
+      g.add(crest);
+
+      // 王牌：额外头顶光环（细环，增强辨识度）
+      if (this.tier === 2) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(0.28, 0.02, 8, 24),
+          new THREE.MeshBasicMaterial({ color: 0xe03030, transparent: true, opacity: 0.7, side: THREE.DoubleSide })
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 1.95;
+        g.add(ring);
+      }
+    }
+
+    // ---- 高精度命中：标记各身体部位，供武器系统 Raycaster 精确求交 ----
+    // (血条 Sprite 不参与求交，避免命中始终面向相机的血条)
+    this.hitMeshes = [
+      head, visor, helmet, neck, torso, chestPlate, hips, shoulderL, shoulderR,
+      ...armL.parts, ...armR.parts,
+      ...legL.parts, ...legR.parts,
+      ...gunParts,
+    ];
+    for (const m of [head, visor, helmet]) m.userData.part = 'head';
+    for (const m of [neck, torso, chestPlate, hips, shoulderL, shoulderR]) m.userData.part = 'torso';
+    for (const m of armL.parts.concat(armR.parts)) m.userData.part = 'arm';
+    for (const m of legL.parts.concat(legR.parts)) m.userData.part = 'leg';
+    for (const m of gunParts) m.userData.part = 'gun';
+    for (const m of this.hitMeshes) m.userData.enemy = this;
+
+    this._walkPhase = 0;
+  }
+
+  // 手臂（上臂 + 前臂 + 手），前伸并向内收拢持枪
+  _buildArm(armorMat, clothMat, skinMat, side) {
+    const arm = new THREE.Group();
+    arm.position.set(side * 0.3, 1.42, 0);
+    const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.34, 8), armorMat);
+    upper.rotation.x = -Math.PI / 2;
+    upper.position.set(side * -0.06, -0.08, -0.1);
+    upper.castShadow = true;
+    arm.add(upper);
+    const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.28, 8), clothMat);
+    fore.rotation.x = -Math.PI / 2;
+    fore.position.set(side * -0.16, -0.06, -0.3);
+    arm.add(fore);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
+    hand.position.set(side * -0.24, -0.05, -0.44);
+    arm.add(hand);
+    return { group: arm, parts: [upper, fore, hand] };
+  }
+
+  // 腿（大腿 + 小腿 + 脚），髋部为走路摆动轴
+  _buildLeg(clothMat, bootMat, side) {
+    const leg = new THREE.Group();
+    leg.position.set(side * 0.14, 0.94, 0);
+    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.44, 8), clothMat);
+    thigh.position.y = -0.22;
+    thigh.castShadow = true;
+    leg.add(thigh);
+    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.4, 8), clothMat);
+    shin.position.y = -0.6;
+    leg.add(shin);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.22), bootMat);
+    foot.position.set(0, -0.85, 0.05);
+    leg.add(foot);
+    return { group: leg, parts: [thigh, shin, foot] };
+  }
+
+  _drawBar() {
+    const ctx = this._barCtx;
+    ctx.clearRect(0, 0, 64, 8);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(0, 0, 64, 8);
+    const r = Math.max(0, this.health / this.maxHealth);
+    ctx.fillStyle = r > 0.5 ? '#4ade60' : r > 0.25 ? '#f5b53a' : '#ff4040';
+    ctx.fillRect(1, 1, 62 * r, 6);
+    this._barTex.needsUpdate = true;
+  }
+
+  spawnAt(pos) {
+    // 碰撞解算：出生点随机偏移可能落入墙/掩体内；先推出，再做无副作用复核。
+    const safe = typeof this.map.findNearestFree === 'function'
+      ? this.map.findNearestFree(pos.x, pos.z, this.radius, 12)
+      : null;
+    const r = safe || this.map.collide(pos.x, pos.z, this.radius);
+    this.position.set(r.x, 0, r.z);
+    this.velocity.set(0, 0, 0);
+    this.health = this.maxHealth;
+    this.alive = true;
+    this.state = 'idle';
+    this.seePlayer = false;
+    this.mesh.visible = true;
+    this.mesh.rotation.set(0, 0, 0);
+    this.mesh.position.copy(this.position);
+    this._barSprite.visible = false;
+    this._stuckTimer = 0;
+    this._escapeTimer = 0;
+    this._wantsMove = false;
+    this._lastPos.copy(this.position);
+    this._seeTimer = Math.random() * 0.12;
+    this._avoidTimer = Math.random() * 0.1;
+    this.magazine = this.magazineSize;
+    this.reserve = this.reserveMax;
+    this.reloadTimer = 0;
+    this._ammoTarget = null;
+    this._ammoSearchTimer = 0;
+    this._ammoPickupCooldown = 0;
+    if (this._rigInstance) this._rigInstance.reset();
+  }
+
+  // ---------- 受击 ----------
+  takeDamage(amount, part) {
+    if (!this.alive) return false;
+    this.health -= amount;
+    if (this._rigInstance) this._rigInstance.triggerHit(part || 'torso');
+    this._barSprite.visible = true;
+    this._drawBar();
+    // 受击立刻进入战斗
+    if (this.state === 'idle') {
+      this.state = 'engage';
+      this.lastSeenPos.copy(this.player.getFeet());
+    }
+    if (this.health <= 0) {
+      this._die();
+      return true;
+    }
+    return false;
+  }
+
+  _die() {
+    this.alive = false;
+    this.state = 'dead';
+    this.deathTimer = 2.0;
+    this._barSprite.visible = false;
+    if (this._rigInstance) this._rigInstance.triggerDeath();
+    // 随机掉落护甲（护盾点数，概率由 CONFIG.enemy.armorDropChance 控制）
+    if (this.pickups && Math.random() < CONFIG.enemy.armorDropChance) {
+      const pk = new Pickup(this.scene, { x: this.position.x, z: this.position.z }, 'armor', true);
+      this.pickups.addDynamic(pk);
+    }
+    // 倒地动画：整体旋转倒下
+  }
+
+  // ---------- 视线检测 ----------
+  _canSeePlayer() {
+    // 独立行为测试会绕过构造器；真实实例在构造时已创建这些复用对象。
+    this._tmpEye = this._tmpEye || new THREE.Vector3();
+    this._tmpTo = this._tmpTo || new THREE.Vector3();
+    this._tmpFlat = this._tmpFlat || new THREE.Vector3();
+    this._tmpFwd = this._tmpFwd || new THREE.Vector3();
+    this._eye2 = this._eye2 || { x: 0, z: 0 };
+    this._target2 = this._target2 || { x: 0, z: 0 };
+    const eye = this._tmpEye.set(this.position.x, 1.6, this.position.z);
+    const target = this.player.getEye();
+    const to = this._tmpTo.copy(target).sub(eye);
+    const dist = to.length();
+    if (dist > CONFIG.enemy.sightRange) return false;
+    to.normalize();
+    // 视野角（敌人朝向）
+    const fwd = this._tmpFwd.set(-Math.sin(this.facing), 0, -Math.cos(this.facing));
+    const flat = this._tmpFlat.copy(to).setY(0);
+    if (flat.lengthSq() > 0) flat.normalize();
+    const dot = fwd.dot(flat);
+    const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
+    // FOV 检测：在视野内或距离很近
+    if (angle > CONFIG.enemy.fov && dist > 6) return false;
+    // 墙遮挡（three-cs 融合：seg 轻量判定优先 + raycast 精确认证兜底）
+    // seg 只让高墙（maxY>=CONFIG.ai.losSegY）参与判定 → 掩体箱不遮视线，与旧 raycast 行为一致
+    // 港口的视觉模型是弹道的最终遮挡来源；不能在 2D 盒体没有相交时提前返回可见，
+    // 否则敌人仍可能隔着模型几何开火。经典竞技场继续使用轻量线段预筛选。
+    const useSeg = CONFIG.ai && CONFIG.ai.losMode === 'seg' && window.Math2D && this.map.boxSegments &&
+      !(this.map.isContainerPort && this.map._portModel);
+    if (useSeg) {
+      const eye2 = this._eye2; eye2.x = this.position.x; eye2.z = this.position.z;
+      const tgt2 = this._target2; tgt2.x = target.x; tgt2.z = target.z;
+      const segs = this.map.boxSegments();
+      let crossed = false;
+      for (let i = 0; i < segs.length; i++) {
+        if (Math2D.checkLineCross(eye2, tgt2, segs[i].p1, segs[i].p2)) { crossed = true; break; }
+      }
+      if (!crossed) return true;                       // 2D 无遮挡 → 可见（掩体不遮，行为不变）
+      const wallDist = this.map.raycast(eye, to, dist); // seg 命中 → raycast 兜底精确认证
+      return wallDist >= dist - 0.5;
+    }
+    const wallDist = this.map.raycast(eye, to, dist);   // losMode='ray' 回退原逻辑
+    return wallDist >= dist - 0.5;
+  }
+
+  // 射击瞬间再次确认弹道无遮挡。
+  // 视线检测有 0.12s 节流，不能直接把缓存结果当成子弹命中许可；
+  // 敌我射击都必须经过同一张地图 AABB 射线边界，避免敌人隔墙造成伤害。
+  _canHitPlayer() {
+    if (!this.player || !this.map || typeof this.player.getEye !== 'function') return false;
+    this._tmpEye = this._tmpEye || new THREE.Vector3();
+    this._tmpTo = this._tmpTo || new THREE.Vector3();
+    const eye = this._tmpEye.set(this.position.x, 1.6, this.position.z);
+    const target = this.player.getEye();
+    const to = this._tmpTo.copy(target).sub(eye);
+    const dist = to.length();
+    if (!Number.isFinite(dist) || dist <= 0.01) return true;
+    to.multiplyScalar(1 / dist);
+    if (typeof this.map.raycastDetailed === 'function') {
+      const wall = this.map.raycastDetailed(eye, to, dist);
+      return !wall || wall.t >= dist - 0.08;
+    }
+    if (typeof this.map.raycast === 'function') {
+      return this.map.raycast(eye, to, dist) >= dist - 0.08;
+    }
+    return true;
+  }
+
+  // ---------- 主更新 ----------
+  update(dt) {
+    if (!this.alive) {
+      // 倒地动画
+      if (this.deathTimer > 0) {
+        this.deathTimer -= dt;
+        const fall = Math.min(1, (2 - this.deathTimer) / 0.5);
+        if (this._rigInstance) {
+          this._rigInstance.update(dt, {
+            speed: 0,
+            forward: 0,
+            side: 0,
+            state: 'dead',
+            distance: 0,
+            rushing: false,
+          });
+        }
+        this.mesh.rotation.x = fall * (Math.PI / 2) * 0.9;
+        this.mesh.position.y = -fall * 0.3;
+        if (this.deathTimer <= 0) this.mesh.visible = false;
+      }
+      return;
+    }
+
+    this._updateAmmo(dt);
+
+    // 检测视线（节流：每 0.12s 一次；射线需遍历 30+ 碰撞盒，每帧每个敌人都做开销大）
+    this._seeTimer = (this._seeTimer || 0) - dt;
+    let seen = this.seePlayer;   // 节流间隔内沿用上次结果
+    if (this._seeTimer <= 0) {
+      this._seeTimer = 0.12;
+      seen = this._canSeePlayer();
+      this.seePlayer = seen;
+    }
+    if (seen) {
+      this.lastSeenPos.copy(this.player.getFeet());
+      if (this.state === 'idle') {
+        this.reactionTimer = CONFIG.enemy.reactionTime;
+        this.state = 'react';
+      }
+    }
+
+    // 行为状态机
+    const toPlayer = this._tmpTo.copy(this.player.getFeet()).sub(this.position);
+    toPlayer.y = 0;
+    const dist = toPlayer.length();
+    const dirToPlayer = this._tmpDir.copy(toPlayer);
+    if (dist > 0.01) dirToPlayer.multiplyScalar(1 / dist); else dirToPlayer.set(0, 0, 0);
+
+    // 反应期
+    if (this.state === 'react') {
+      this.reactionTimer -= dt;
+      if (this.reactionTimer <= 0) this.state = 'engage';
+      this._moveTowards(dirToPlayer, dt, 0);   // 反应期不动
+    } else if (this.state === 'engage') {
+      this._engage(dist, dirToPlayer, dt, seen);
+    }
+
+    // 朝向：始终面向玩家或移动方向
+    if (this.state !== 'idle') {
+      this.facing = Math.atan2(-dirToPlayer.x, -dirToPlayer.z);
+    }
+
+    // ---- 卡墙检测：有移动意图但位移过小，持续判定后执行一次安全脱困 ----
+    if (this.state === 'engage' || this.state === 'react') {
+      const moved = Math.hypot(this.position.x - this._lastPos.x, this.position.z - this._lastPos.z);
+      this._lastPos.copy(this.position);
+      if (this._wantsMove && moved < 0.03) {
+        this._stuckTimer += dt;
+        if (this._stuckTimer > 1.8 && this._escapeTimer <= 0) {
+          this._stuckTimer = 0;
+          this._recoverFromStuck();
+        }
+      } else {
+        this._stuckTimer = 0;
+      }
+    } else {
+      this._lastPos.copy(this.position);
+      this._stuckTimer = 0;
+    }
+
+    // 应用位置（先做 AI-AI 防穿模推挤：位置已由 _engage/_moveTowards 更新完，推挤后 mesh 自动跟随）
+    this._avoidAI(dt);
+    this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+    this.mesh.rotation.y = this.facing;
+
+    // 混合骨骼系统接收相对朝向的二维速度：下半身自由移动，上半身持续瞄准并可叠加射击。
+    const sp = Math.hypot(this.velocity.x, this.velocity.z);
+    if (this._rigInstance) {
+      const forwardX = -Math.sin(this.facing);
+      const forwardZ = -Math.cos(this.facing);
+      const rightX = Math.cos(this.facing);
+      const rightZ = -Math.sin(this.facing);
+      const motionScale = Math.max(this.speed || sp, 0.001);
+      this._rigInstance.update(dt, {
+        speed: sp,
+        forward: Math.max(-1, Math.min(1, (this.velocity.x * forwardX + this.velocity.z * forwardZ) / motionScale)),
+        side: Math.max(-1, Math.min(1, (this.velocity.x * rightX + this.velocity.z * rightZ) / motionScale)),
+        state: this.state,
+        distance: dist,
+        rushing: this.rushTime > 0,
+      });
+    } else if (sp > 0.3) {
+      this._walkPhase += dt * sp * 3;
+      this._legL.rotation.x = Math.sin(this._walkPhase) * 0.5;
+      this._legR.rotation.x = -Math.sin(this._walkPhase) * 0.5;
+    } else {
+      this._legL.rotation.x *= 0.8;
+      this._legR.rotation.x *= 0.8;
+    }
+  }
+
+  _engage(dist, dirToPlayer, dt, seen) {
+    const E = CONFIG.enemy;
+    const moveDir = this._tmpMove.set(0, 0, 0);
+    let curSpeed = 0;
+
+    // 卡墙强制逃离：朝最开阔方向走（不开火），优先解困
+    if (this._escapeTimer > 0) {
+      this._escapeTimer -= dt;
+      const dir = this._tmpAux.set(Math.cos(this._escapeDir), 0, Math.sin(this._escapeDir));
+      this._moveTowards(dir, dt, this.speed);
+      return;
+    }
+
+    // 弹匣与备弹都耗尽时，敌人主动去抢地图上的弹药包；补到弹后仍要走正常换弹读条。
+    if (this._magazineCount() <= 0 && this._reserveCount() <= 0 && this._seekAmmo(dt)) return;
+    if (this._magazineCount() <= 0 && this._reserveCount() > 0) this._startReload();
+
+    // ---- 冲刺突进（rush）：精英/王牌专属，每 3~6s 一次，近距离突然加速冲向玩家 ----
+    if (this.canRush && dist < 10 && this.rushTime <= 0 && this.rushCooldown <= 0) {
+      this.rushTime = 0.8;          // 冲刺持续 0.8s
+      this.rushCooldown = 3 + Math.random() * 3;
+      if (this.hud) this.hud.toast(`${this.tierLabel || ''}敌人发起冲锋！`.trim());
+    }
+    if (this.rushTime > 0) {
+      this.rushTime -= dt;
+      moveDir.copy(dirToPlayer);
+      curSpeed = this.speed * 2.2;   // 冲刺速度约为普通 2.2 倍
+      this._moveTowards(moveDir, dt, curSpeed);
+      // 冲刺结束 → 近战重击
+      if (this.rushTime <= 0 && dist < 2.5 && this.canMelee) {
+        this._meleeHit();
+        this.meleeCooldown = 1.5;
+      }
+      // 冲刺期间不后撤不横移，纯突进
+    } else {
+      this.rushCooldown -= dt;
+
+      // 距离过远 → 接近；过近 → 后撤（canPush 精英不后撤，压近输出）
+      if (dist > 18) {
+        moveDir.copy(dirToPlayer);
+        curSpeed = this.speed * 1.3;
+      } else if (dist < 6) {
+        if (this.canPush) {
+          // 精英/王牌近身不后撤：继续压近，配合近战
+          moveDir.copy(dirToPlayer);
+          curSpeed = this.speed * 1.1;
+        } else {
+          moveDir.copy(dirToPlayer).multiplyScalar(-1);
+          curSpeed = this.speed;
+        }
+      } else {
+        // 中距离：横向绕圈
+        this.strafeTimer -= dt;
+        if (this.strafeTimer <= 0) {
+          this.strafeDir *= -1;
+          this.strafeTimer = 1 + Math.random() * 2;
+        }
+        // 偶尔向玩家靠近
+        if (dist > 12) moveDir.addScaledVector(dirToPlayer, 0.5);
+        // 横向
+        const side = this._tmpAux.set(-dirToPlayer.z, 0, dirToPlayer.x).multiplyScalar(this.strafeDir);
+        moveDir.add(side);
+        if (moveDir.lengthSq() > 0) moveDir.normalize();
+        curSpeed = this.speed * 0.9;
+      }
+      this._moveTowards(moveDir, dt, curSpeed);
+    }
+
+    // 近战冷却（非冲刺触发的近战，如敌人贴身时概率出拳）
+    if (this.canMelee && this.meleeCooldown > 0) this.meleeCooldown -= dt;
+
+    // 开火（冲刺期间不开火，专注突进）
+    if (this.rushTime <= 0) {
+      this.fireCooldown -= dt;
+      if (seen && dist < E.fireRange && this.fireCooldown <= 0 && this.reloadTimer <= 0 && this._magazineCount() > 0) {
+        this._fireBurst(dist);
+        // fireIntervalMul：精英/王牌开火更密集
+        this.fireCooldown = (E.fireInterval + Math.random() * 0.4) * this.fireIntervalMul;
+        // burstBonus：精英/王牌点射更长
+        this.burstLeft = E.burstCount + this.burstBonus;
+      }
+    }
+    // 点射间隔
+    if (this.burstLeft > 0 && this.reloadTimer <= 0 && this._magazineCount() > 0) {
+      this.burstTimer -= dt;
+      if (this.burstTimer <= 0) {
+        const fired = this._shootOnce(dist);
+        if (fired) {
+          this.burstLeft--;
+          this.burstTimer = E.burstDelay;
+        } else {
+          this.burstLeft = 0;
+        }
+      }
+    } else if (this._magazineCount() <= 0) {
+      this.burstLeft = 0;
+    }
+
+    // 近身近战：非冲刺状态下，贴身且冷却好了 → 概率出拳
+    if (this.canMelee && this.meleeCooldown <= 0 && dist < 2.0 && Math.random() < 0.015) {
+      this._meleeHit();
+      this.meleeCooldown = 2.0;
+    }
+  }
+
+  // 找一个最开阔的方向用于卡墙解困（采样 8 个方向，选离墙最远者）
+  _findEscapeDir() {
+    let bestA = 0, bestClear = -1;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const dx = Math.cos(a), dz = Math.sin(a);
+      let clear = 0;
+      for (let d = 0.5; d <= 6; d += 0.5) {
+        const r = this.map.collide(this.position.x + dx * d, this.position.z + dz * d, this.radius);
+        if (Math.abs(r.x - (this.position.x + dx * d)) > 0.01 || Math.abs(r.z - (this.position.z + dz * d)) > 0.01) break;
+        clear = d;
+      }
+      if (clear > bestClear) { bestClear = clear; bestA = a; }
+    }
+    return bestA;
+  }
+
+  // 先把已经卡入碰撞盒的敌人移到最近合法位置；找不到时才使用方向逃离，
+  // 防止“永远在墙内但每帧仍按追击方向移动”的状态持续存在。
+  _recoverFromStuck() {
+    const currentlyFree = this.map && typeof this.map.isCircleFree === 'function'
+      ? this.map.isCircleFree(this.position.x, this.position.z, this.radius)
+      : false;
+    if (!currentlyFree && this.map && typeof this.map.findNearestFree === 'function') {
+      const safe = this.map.findNearestFree(this.position.x, this.position.z, this.radius, 6);
+      if (safe) {
+        this.position.x = safe.x;
+        this.position.z = safe.z;
+        this.velocity.x = 0;
+        this.velocity.z = 0;
+        this._lastPos.copy(this.position);
+        return;
+      }
+    }
+    this._escapeDir = this._findEscapeDir();
+    this._escapeTimer = 1.2;
+  }
+
+  _moveTowards(dir, dt, speed) {
+    this._wantsMove = speed > 0 && dir.lengthSq() > 0;
+    if (!this._wantsMove) {
+      this.velocity.x *= 0.8; this.velocity.z *= 0.8;
+      return;
+    }
+    this.velocity.x = dir.x * speed;
+    this.velocity.z = dir.z * speed;
+    // 积分
+    let nx = this.position.x + this.velocity.x * dt;
+    let nz = this.position.z + this.velocity.z * dt;
+    const r = typeof this.map.moveCircle === 'function'
+      ? this.map.moveCircle(this.position.x, this.position.z, nx, nz, this.radius)
+      : this.map.collide(nx, nz, this.radius);
+    const pushX = r.x - nx, pushZ = r.z - nz;
+    const blocked = Math.abs(pushX) > 0.001 || Math.abs(pushZ) > 0.001;
+    if (blocked) {
+      // 滑墙：把速度中撞墙法线方向的分量移除，剩余切向分量继续移动
+      const len = Math.hypot(pushX, pushZ) || 1;
+      const nX = pushX / len, nZ = pushZ / len;
+      const dot = this.velocity.x * nX + this.velocity.z * nZ;
+      if (dot < 0) {
+        let sX = this.velocity.x - dot * nX;
+        let sZ = this.velocity.z - dot * nZ;
+        const sLen = Math.hypot(sX, sZ);
+        if (sLen > 0.001) {
+          // 切向速度归一化到原速（保持移动节奏）
+          sX = (sX / sLen) * speed;
+          sZ = (sZ / sLen) * speed;
+          const altX = this.position.x + sX * dt;
+          const altZ = this.position.z + sZ * dt;
+          const r2 = typeof this.map.moveCircle === 'function'
+            ? this.map.moveCircle(this.position.x, this.position.z, altX, altZ, this.radius)
+            : this.map.collide(altX, altZ, this.radius);
+          if (Math.abs(r2.x - altX) < 0.001 && Math.abs(r2.z - altZ) < 0.001) {
+            nx = r2.x; nz = r2.z;
+          } else {
+            nx = r.x; nz = r.z;   // 切向也被挡 → 原地，交给卡墙检测换向
+          }
+        } else {
+          // 纯正面撞墙没有切向速度，必须停在碰撞解算后的合法位置，不能继续使用穿墙终点。
+          nx = r.x; nz = r.z;
+        }
+      } else {
+        nx = r.x; nz = r.z;
+      }
+    }
+    this.position.set(nx, this.position.y, nz);
+  }
+
+  // AI-AI 纯位置约束（three-cs pointToSegmentDistance 思路，平方距离即可）：
+  // 只推自己、不修改他人位置、不改变追击/开火/横移行为策略
+  _avoidAI(dt) {
+    this._avoidTimer = (this._avoidTimer || 0) - dt;
+    if (this._avoidTimer > 0) return;
+    this._avoidTimer = 0.1;                          // 10Hz 节流
+    const others = this.enemies;                     // main.js 注入的数组引用
+    if (!others || others.length < 2) return;
+    const spacing = (CONFIG.ai && CONFIG.ai.aiSpacing) || 0.9;
+    const minSq = spacing * spacing;
+    for (const o of others) {
+      if (o === this || !o.alive) continue;
+      const dx = this.position.x - o.position.x;
+      const dz = this.position.z - o.position.z;
+      const dSq = dx * dx + dz * dz;
+      if (dSq >= minSq || dSq < 1e-6) continue;
+      const d = Math.sqrt(dSq);
+      const push = (spacing - d) * 0.5;              // 只推开自己（半距，两敌各让 0.5 视觉均衡）
+      const nx = dx / d, nz = dz / d;
+      const startX = this.position.x, startZ = this.position.z;
+      const targetX = startX + nx * push, targetZ = startZ + nz * push;
+      // 分离位移同样沿完整轨迹求解；只检查终点会让两个重叠敌人在窄墙两侧互推穿墙。
+      const r = typeof this.map.moveCircle === 'function'
+        ? this.map.moveCircle(startX, startZ, targetX, targetZ, this.radius)
+        : this.map.collide(targetX, targetZ, this.radius);
+      this.position.x = r.x; this.position.z = r.z;
+    }
+  }
+
+  _fireBurst(dist) {
+    this.burstTimer = 0;
+  }
+
+  _magazineCount() {
+    const ammoCfg = CONFIG.enemy.ammo || {};
+    const fallback = Math.max(1, Math.floor(Number(ammoCfg.magazineSize) || 18));
+    if (!Number.isFinite(Number(this.magazine))) this.magazine = fallback;
+    return Math.max(0, Math.floor(Number(this.magazine)));
+  }
+
+  _reserveCount() {
+    const ammoCfg = CONFIG.enemy.ammo || {};
+    const fallback = Math.max(0, Math.floor(Number(ammoCfg.reserveSize) || 54));
+    if (!Number.isFinite(Number(this.reserve))) this.reserve = fallback;
+    if (!Number.isFinite(Number(this.reserveMax))) this.reserveMax = fallback;
+    return Math.max(0, Math.floor(Number(this.reserve)));
+  }
+
+  _updateAmmo(dt) {
+    if (!Number.isFinite(Number(this.reloadTimer))) this.reloadTimer = 0;
+    if (this.reloadTimer <= 0) return;
+    this.reloadTimer = Math.max(0, this.reloadTimer - Math.max(0, Number(dt) || 0));
+    if (this.reloadTimer > 0) return;
+    const ammoCfg = CONFIG.enemy.ammo || {};
+    const capacity = Math.max(1, Math.floor(Number(this.magazineSize) || Number(ammoCfg.magazineSize) || 18));
+    const reserve = this._reserveCount();
+    const missing = Math.max(0, capacity - this._magazineCount());
+    const loaded = Math.min(missing, reserve);
+    this.magazine += loaded;
+    this.reserve -= loaded;
+  }
+
+  _startReload() {
+    if (this.reloadTimer > 0 || this._magazineCount() > 0 || this._reserveCount() <= 0) return false;
+    const ammoCfg = CONFIG.enemy.ammo || {};
+    this.reloadTimer = Math.max(0.1, Number(ammoCfg.reloadTime) || 1.5);
+    this.burstLeft = 0;
+    return true;
+  }
+
+  _seekAmmo(dt) {
+    const ammoCfg = CONFIG.enemy.ammo || {};
+    const delta = Math.max(0, Number(dt) || 0);
+    this._ammoSearchTimer = Math.max(0, (Number(this._ammoSearchTimer) || 0) - delta);
+    this._ammoPickupCooldown = Math.max(0, (Number(this._ammoPickupCooldown) || 0) - delta);
+    if (!this.pickups || typeof this.pickups.findNearestActive !== 'function') {
+      this._wantsMove = false;
+      return false;
+    }
+    // 没找到补给时遵守搜索间隔，不让“无弹敌人”每帧扫描整张拾取列表。
+    if (!this._ammoTarget && this._ammoSearchTimer > 0) {
+      this._wantsMove = false;
+      return false;
+    }
+    if (this._ammoSearchTimer <= 0 || !this._ammoTarget || !this._ammoTarget.active) {
+      this._ammoSearchTimer = Math.max(0.1, Number(ammoCfg.searchInterval) || 0.45);
+      this._ammoTarget = this.pickups.findNearestActive(
+        'ammo', this.position.x, this.position.z, Number(ammoCfg.pickupSearchRadius) || 28
+      );
+    }
+    const target = this._ammoTarget;
+    if (!target) {
+      this._wantsMove = false;
+      return false;
+    }
+    const dx = target.pos.x - this.position.x;
+    const dz = target.pos.z - this.position.z;
+    const distance = Math.hypot(dx, dz);
+    if (distance <= (Number(ammoCfg.pickupRange) || 1.4)) {
+      if (this._ammoPickupCooldown <= 0 && typeof this.pickups.collectAmmoForEnemy === 'function' &&
+        this.pickups.collectAmmoForEnemy(this, target)) {
+        this._ammoPickupCooldown = 0.25;
+        this._ammoTarget = null;
+        this._startReload();
+      }
+      this._wantsMove = false;
+      return true;
+    }
+    this._tmpAux = this._tmpAux || new THREE.Vector3();
+    this._tmpAux.set(dx, 0, dz).normalize();
+    this._moveTowards(this._tmpAux, dt, this.speed);
+    return true;
+  }
+
+  _shootOnce(dist) {
+    const E = CONFIG.enemy;
+    if (this.reloadTimer > 0 || this._magazineCount() <= 0) return false;
+    this.magazine = this._magazineCount() - 1;
+    if (this._rigInstance) this._rigInstance.triggerShot();
+    // 命中率随距离衰减 + 精英/王牌命中加成
+    const acc = (E.hitChance + this.hitChanceAdd) * Math.max(0.3, 1 - dist / E.fireRange);
+    if (Math.random() < acc && this._canHitPlayer()) {
+      // 是否暴击（头）：小概率
+      const head = Math.random() < 0.12;
+      const minDamage = Math.max(1, Number(E.damageMin ?? E.damage ?? 8));
+      const maxDamage = Math.max(minDamage, Number(E.damageMax ?? E.damage ?? minDamage));
+      const baseDamage = minDamage + Math.random() * (maxDamage - minDamage);
+      const dmg = head ? baseDamage * (Number(E.headshotMultiplier) || 3) : baseDamage + (this.damageAdd || 0);
+      this.player.takeDamage(dmg);
+      // 枪口火光（敌人朝向玩家）
+    }
+    // 音效（3D 空间音频：按敌人世界坐标播放；不可用时内部自动回退全局 enemyShot()）
+    if (this.hud.audio) this.hud.audio.enemyShot3D(this.position);
+    if (this._magazineCount() <= 0 && this._reserveCount() > 0) this._startReload();
+    return true;
+  }
+
+  // ---- 近战重击（精英/王牌专属）----
+  _meleeHit() {
+    if (!this.player || !this.player.alive) return;
+    const dist = this.position.distanceTo(this.player.getFeet());
+    if (dist > 2.5) return;
+    if (this._rigInstance) this._rigInstance.triggerMelee();
+    // 近战必定命中（贴身），高伤害
+    const dmg = this.meleeDamage + (Math.random() * 4 - 2);
+    this.player.takeDamage(dmg);
+    // 近战冲击波（视觉）
+    if (this.hud && this.hud.audio) this.hud.audio.enemyShot();
+    // 屏幕震动反馈
+    if (this.hud && this.hud._onMelee) this.hud._onMelee();
+  }
+
+  dispose() {
+    if (!this.mesh) return;
+    this.scene.remove(this.mesh);
+    if (this._rigInstance) {
+      // 只释放实例资源；共享人体几何、材质和贴图继续供其他敌人/下一波使用。
+      if (this._barSprite && this._barSprite.material) this._barSprite.material.dispose();
+      if (this._barTex) this._barTex.dispose();
+      if (this._contactShadow) {
+        if (this._contactShadow.geometry) this._contactShadow.geometry.dispose();
+        if (this._contactShadow.material) this._contactShadow.material.dispose();
+      }
+      this._rigInstance.dispose();
+      if (this.hitMeshes) this.hitMeshes.length = 0;
+      this._rigInstance = null;
+      this._barTex = null;
+      this._barCanvas = null;
+      this._barCtx = null;
+      this._barSprite = null;
+      this._contactShadow = null;
+      this.mesh = null;
+      return;
+    }
+    const geometries = new Set();
+    const materials = new Set();
+    this.mesh.traverse((obj) => {
+      if (obj.geometry && !geometries.has(obj.geometry)) {
+        geometries.add(obj.geometry);
+        obj.geometry.dispose();
+      }
+      const list = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
+      for (const mat of list) {
+        if (!materials.has(mat)) {
+          materials.add(mat);
+          mat.dispose();
+        }
+      }
+    });
+    if (this._barTex) this._barTex.dispose();
+    if (this.hitMeshes) this.hitMeshes.length = 0;
+    this._barTex = null;
+    this._barCanvas = null;
+    this._barCtx = null;
+    this._barSprite = null;
+    this.mesh = null;
+  }
+}
+
+// 经典脚本全局暴露（依赖顺序：config → three(UMD) → map → player → enemy → …）
+window.Enemy = Enemy;

@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.env
+.env.local
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Large binary assets (keep source, ignore pre-built copies)
+yiren-buche-minitool-candidate.zip
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+$RECYCLE.BIN
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# WorkBuddy internal
+.workbuddy/
+.codex/
+.playwright-cli/
+.skill/
+output/
+tools/
+
+# Test artifacts
+tests/coverage/
+.coverage

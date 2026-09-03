@@ -1,0 +1,58 @@
+- generic [ref=e2]:
+  - generic [ref=e28]:
+    - heading "设置" [level=2] [ref=e29]
+    - generic [ref=e30]:
+      - generic [ref=e31]: 按钮大小
+      - slider "按钮大小" [ref=e32] [cursor=pointer]: "100"
+      - generic [ref=e33]: 100%
+    - generic [ref=e34]:
+      - generic [ref=e35]: 转身灵敏度
+      - slider "转身灵敏度" [ref=e36] [cursor=pointer]: "100"
+      - generic [ref=e37]: 100%
+    - generic [ref=e38]:
+      - generic [ref=e39]: 准星样式
+      - radiogroup "准星样式" [ref=e40]:
+        - button "经典十字" [ref=e41] [cursor=pointer]
+        - button "点式" [pressed] [ref=e43] [cursor=pointer]
+        - button "圆环" [ref=e45] [cursor=pointer]
+        - button "实心十字" [ref=e47] [cursor=pointer]
+        - button "战术十字点" [ref=e49] [cursor=pointer]
+    - button "自定义按钮位置" [ref=e51] [cursor=pointer]
+    - button "恢复默认布局" [ref=e52] [cursor=pointer]
+    - button "关闭" [ref=e53] [cursor=pointer]
+    - paragraph [ref=e54]: 自定义布局会保存在本机，随时可改
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "100"
+      - generic:
+        - generic: 🛡
+        - generic: "100"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=e15] [cursor=pointer]: 1 Glock-18
+        - generic [ref=e16] [cursor=pointer]: 2 AK-47
+        - generic [ref=e17] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "3"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：3 名敌人
+    - generic:
+      - generic:
+        - button "FIRE" [ref=e19]
+        - button "跳" [ref=e20]
+        - button "蹲" [ref=e21]
+        - button "⟳" [ref=e22]
+        - button "换" [ref=e23]
+      - generic [ref=e24]:
+        - button "II" [ref=e25]
+        - button "⚙" [ref=e26]
+    - generic: 视口 360×732 | 内容 732×360 | 缩放 0.78 | 旋转 开 | DPR 3

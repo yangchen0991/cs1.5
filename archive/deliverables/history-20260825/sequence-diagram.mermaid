@@ -1,0 +1,42 @@
+sequenceDiagram
+    participant U as 用户(鼠标/FIRE)
+    participant W as WeaponSystem
+    participant P as Player
+    participant M as GameMap
+    participant E as Enemy
+    participant H as HUD
+    participant A as AudioFX
+
+    U->>W: mousedown / setFiring(true) / triggerSemi()
+    W->>W: update(dt): 冷却/换弹/散布恢复检查
+    W->>W: _fire()
+    W->>P: getAimRay()
+    P-->>W: {origin, direction}
+    W->>W: 计算 spread(基础+连发累积+移动) 并扰动方向
+    W->>W: _spreadCurrent += spreadInc (AK累积/USP不变)
+    W->>P: applyRecoil(recoil)
+    W->>M: raycastDetailed(origin, dir, range)
+    M-->>W: {t: wallT, normal}
+    W->>W: _hitscan(origin, dir, range) [遍历敌人hitMeshes]
+    W-->>E: Raycaster 三角级求交
+    E-->>W: {enemy, part, t, point, normal}
+    alt 敌人命中 (hit.t < wallT)
+        W->>W: _damageForPart(w, part, hit.t) = 部位倍率 × 距离衰减
+        W->>E: takeDamage(dmg, part)
+        E-->>W: killed(boolean)
+        W->>H: worldToScreen(hit.point, camera)
+        H-->>W: {x, y}
+        W->>H: hitMarker(isHead, killed) → 白X/金放大/击杀标记
+        W->>H: showDamageNumber(dmg, x, y, isHead) → 飘字 -24/-96
+        W->>W: _spawnHitSpark(point, normal, part) → 血花/爆头火花
+        W->>A: hit(isHead, killed) → 叮/爆头叮/击杀琶音
+        opt killed
+            W->>H: killFeed(enemy.name, weapon.name, isHead)
+        end
+    else 墙命中 (wallT < range)
+        W->>W: _spawnImpact(endPoint, wall.normal) → 弹孔
+        W->>A: wallHit('concrete')
+    end
+    W->>A: shot(currentId) → 枪声(USP小/AK大)
+    W->>H: crosshairFire(spread) → 准星扩张变色
+    H-->>U: DOM 反馈(准星/弹药/标记/飘字)

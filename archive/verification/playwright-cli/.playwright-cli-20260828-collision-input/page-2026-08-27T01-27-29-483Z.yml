@@ -1,0 +1,29 @@
+- generic [ref=e2]:
+  - generic [ref=e71]:
+    - heading "已暂停" [level=2] [ref=e72]
+    - button "继续游戏" [ref=e73] [cursor=pointer]
+    - button "设置" [ref=e74] [cursor=pointer]
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "22"
+      - generic:
+        - generic: 🛡
+        - generic: "22"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=e67] [cursor=pointer]: 1 Glock-18
+        - generic [ref=e68] [cursor=pointer]: 2 AK-47
+        - generic [ref=e69] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "2"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：2 名敌人

@@ -1,0 +1,68 @@
+{
+  "pipeline": "ak47-fused-grip-obj-quantized-v1",
+  "source": {
+    "obj": "cac988e3d8ab58be230e74c9418e438c.obj",
+    "sha256": "f785fcde1dd9d2ab42fa58ee2138f51707501a6b87462137c1661b284adfc769",
+    "vertexCount": 749976,
+    "triangleCount": 1500004
+  },
+  "output": {
+    "version": 1,
+    "sourceHash": "f785fcde1dd9d2ab42fa58ee2138f51707501a6b87462137c1661b284adfc769",
+    "fusedViewModel": true,
+    "description": "AK-47 plus both arms and hands as one authored grasp viewmodel",
+    "sourceForwardAxis": "+X",
+    "runtimeForwardAxis": "-Z",
+    "viewRotationYRadians": 1.5707963267948966,
+    "quantized": true,
+    "vertexCount": 62155,
+    "triangleCount": 28230,
+    "positionMaxError": 7.886530839329442e-06,
+    "uvMaxError": 7.6166323339510456e-06,
+    "simplification": {
+      "cellSize": 0.01,
+      "clusterCount": 11697,
+      "triangleCount": 28230,
+      "vertexCount": 62155,
+      "center": [
+        0.12854179193687842,
+        0.16848965239596475,
+        -0.024527316533160787
+      ],
+      "sourceBounds": {
+        "min": [
+          -0.389419,
+          -0.0,
+          -0.313753
+        ],
+        "max": [
+          0.649241,
+          0.33517,
+          0.262979
+        ]
+      }
+    }
+  },
+  "textures": {
+    "ak47_model.js": {
+      "bytes": 1305664,
+      "sha256": "edf47fdd54ba92a9a47df504490788c3338118ceaccb0353aa9c56eee0974df8"
+    },
+    "ak47_tex.js": {
+      "bytes": 910,
+      "sha256": "5a5444e86c763614372df13abb24822965ee5835722f63d6ed939388f7056715"
+    },
+    "ak47_albedo.webp": {
+      "bytes": 111588,
+      "sha256": "cc160fdd4fce6cd848daf046ce8509631f5b765c32172a79cfda0f95f473e110"
+    },
+    "ak47_normal.webp": {
+      "bytes": 71126,
+      "sha256": "709ff66c9ea2c7453ee52519317d759917ae140b39384511683ab6d8ba80f583"
+    },
+    "ak47_mr.webp": {
+      "bytes": 106892,
+      "sha256": "d9bde31565ae8e6cbb24dae2c70a6284c5e8fc9a436f35285635e2012dede14c"
+    }
+  }
+}

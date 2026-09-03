@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "qualityProfile": "mobile-balanced-new-weapons-v1",
+  "assets": [
+    {
+      "id": "m249",
+      "displayName": "M249",
+      "pipeline": "obj-uv-cluster-u16-snorm8-webp-v1",
+      "qualityProfile": "mobile-balanced-new-weapons-v1",
+      "source": {
+        "folder": "J:\\武器\\M249",
+        "obj": "b89ff6e17ac5ea842481c0147ae4a2ab.obj",
+        "objSha256": "8E87256A8600AD620D76F3011C6B5351A3D8B471E9FE696C194B334E59A7BE83",
+        "vertexCount": 24960,
+        "triangleCount": 50000,
+        "bounds": {
+          "min": [
+            -0.578786,
+            -0.0,
+            -0.100247
+          ],
+          "max": [
+            0.610559,
+            0.414069,
+            0.118471
+          ]
+        }
+      },
+      "output": {
+        "version": 1,
+        "qualityProfile": "mobile-balanced-new-weapons-v1",
+        "sourceHash": "8E87256A8600AD620D76F3011C6B5351A3D8B471E9FE696C194B334E59A7BE83",
+        "description": "M249",
+        "sourceForwardAxis": "-X",
+        "runtimeForwardAxis": "-Z",
+        "viewRotationYRadians": -1.5707963267948966,
+        "indexFormat": "H",
+        "quantized": true,
+        "vertexCount": 22661,
+        "triangleCount": 17957,
+        "positionMaxError": 9.072137026111537e-06,
+        "uvMaxError": 7.622323949074694e-06,
+        "simplification": {
+          "cellSize": 0.007589712683111429,
+          "clusterCount": 8452,
+          "vertexCount": 22661,
+          "triangleCount": 17957,
+          "center": [
+            0.015948749999999956,
+            0.206742375,
+            0.008960833333333335
+          ],
+          "targetTriangles": 18000
+        }
+      },
+      "textureDimensions": {
+        "albedo": 1024,
+        "normal": 768,
+        "mr": 512
+      },
+      "files": {
+        "m249_model.js": {
+          "bytes": 539129,
+          "sha256": "42B8AAEEAB9D01489EB72F5F2CED0F3EA0855AD5118DC3BAC322412A7F21A027"
+        },
+        "m249_tex.js": {
+          "bytes": 1385,
+          "sha256": "9A91B24F18DD93F907EA7548F331CBE17E577C4609080B71052E0A40472B5020"
+        },
+        "m249_albedo.webp": {
+          "bytes": 221022,
+          "sha256": "A3A1F34B97B58DB2DA65F53C001F7F58AA45DF2E521E589A9C19816D351AC183"
+        },
+        "m249_normal.webp": {
+          "bytes": 115300,
+          "sha256": "15EE775609A04235D5C9F9C1362CE7D723101D03356027080C5D2B92D3634B25"
+        },
+        "m249_mr.webp": {
+          "bytes": 118246,
+          "sha256": "A4BA13968DFC2EDE1734CC1BBBB30E05B54ED6427135ED29830B976F78DBEED9"
+        }
+      }
+    },
+    {
+      "id": "m9",
+      "displayName": "M9 Bayonet",
+      "pipeline": "obj-uv-cluster-u16-snorm8-webp-v1",
+      "qualityProfile": "mobile-balanced-new-weapons-v1",
+      "source": {
+        "folder": "J:\\武器\\M9",
+        "obj": "6865089b4f2ad475ce2647cc8aed23cf.obj",
+        "objSha256": "5CA38FF05628BD8A879D1BDA77446D535425DCB0342E413C4812A03D8E7A0655",
+        "vertexCount": 24996,
+        "triangleCount": 50000,
+        "bounds": {
+          "min": [
+            -0.768532,
+            -0.0,
+            -0.129957
+          ],
+          "max": [
+            0.424542,
+            0.231527,
+            0.133144
+          ]
+        }
+      },
+      "output": {
+        "version": 1,
+        "qualityProfile": "mobile-balanced-new-weapons-v1",
+        "sourceHash": "5CA38FF05628BD8A879D1BDA77446D535425DCB0342E413C4812A03D8E7A0655",
+        "description": "M9 Bayonet",
+        "sourceForwardAxis": "-X",
+        "runtimeForwardAxis": "-Z",
+        "viewRotationYRadians": -1.5707963267948966,
+        "indexFormat": "H",
+        "quantized": true,
+        "vertexCount": 13811,
+        "triangleCount": 10000,
+        "positionMaxError": 9.0731501541097e-06,
+        "uvMaxError": 7.620889600989944e-06,
+        "simplification": {
+          "cellSize": 0.010527411797501147,
+          "clusterCount": 4633,
+          "vertexCount": 13811,
+          "triangleCount": 10000,
+          "center": [
+            -0.17010184302325582,
+            0.11616391666666667,
+            0.0014777454545454594
+          ],
+          "targetTriangles": 10000
+        }
+      },
+      "textureDimensions": {
+        "albedo": 1024,
+        "normal": 768,
+        "mr": 512
+      },
+      "files": {
+        "m9_model.js": {
+          "bytes": 322092,
+          "sha256": "7557D16ABCAF2F858483F5616C46772C28655BC02942CA55C07E130DB8FC5D04"
+        },
+        "m9_tex.js": {
+          "bytes": 1379,
+          "sha256": "F38C1C3B4765062364FC54EE6084B51AC7C6E912D9AFFCC625CEDFD3C7F46041"
+        },
+        "m9_albedo.webp": {
+          "bytes": 145620,
+          "sha256": "8AC585809B6FA2544D6FA96A98F95C31AC8EBE082EFAC9D874A12C2C40E8A8D3"
+        },
+        "m9_normal.webp": {
+          "bytes": 78636,
+          "sha256": "B01303F803C3EF634C74CEEF10300FED71B07592A429FA32C087DE1A69C6BECD"
+        },
+        "m9_mr.webp": {
+          "bytes": 161868,
+          "sha256": "25FDFD3ECA12FA308642229BC2355EA90AA8D26F138CCA2EEF29D19CC8EC567A"
+        }
+      }
+    },
+    {
+      "id": "grenade",
+      "displayName": "M26 Grenade",
+      "pipeline": "obj-uv-cluster-u16-snorm8-webp-v1",
+      "qualityProfile": "mobile-balanced-new-weapons-v1",
+      "source": {
+        "folder": "J:\\武器\\手榴弹",
+        "obj": "198a36ed17ee1ede10cbb183f223c291.obj",
+        "objSha256": "371FF6C22BE1539D08B431B417B409F82C2E81B932C60A92DA54E73ADFE3B33C",
+        "vertexCount": 24994,
+        "triangleCount": 50000,
+        "bounds": {
+          "min": [
+            -0.353896,
+            -0.0,
+            -0.326818
+          ],
+          "max": [
+            0.318902,
+            1.147557,
+            0.299513
+          ]
+        }
+      },
+      "output": {
+        "version": 1,
+        "qualityProfile": "mobile-balanced-new-weapons-v1",
+        "sourceHash": "371FF6C22BE1539D08B431B417B409F82C2E81B932C60A92DA54E73ADFE3B33C",
+        "description": "M26 Grenade",
+        "sourceForwardAxis": "+Y upright",
+        "runtimeForwardAxis": "+Y upright",
+        "viewRotationYRadians": 0.0,
+        "indexFormat": "H",
+        "quantized": true,
+        "vertexCount": 13125,
+        "triangleCount": 7994,
+        "positionMaxError": 8.747928587737874e-06,
+        "uvMaxError": 7.622720683553297e-06,
+        "simplification": {
+          "cellSize": 0.026697520803149785,
+          "clusterCount": 3694,
+          "vertexCount": 13125,
+          "triangleCount": 7994,
+          "center": [
+            -0.017132979166666645,
+            0.5742348749999999,
+            -0.013618261904761897
+          ],
+          "targetTriangles": 8000
+        }
+      },
+      "textureDimensions": {
+        "albedo": 1024,
+        "normal": 768,
+        "mr": 512
+      },
+      "files": {
+        "grenade_model.js": {
+          "bytes": 294150,
+          "sha256": "34AC79183626F94F3D6FA97519C39D3D9F3F4322DBF9FBFD856BF08064C68C14"
+        },
+        "grenade_tex.js": {
+          "bytes": 1410,
+          "sha256": "B872DC3E8FB53A21A90BCC9B9D719E42346E074534D6B48AD89E399487032269"
+        },
+        "grenade_albedo.webp": {
+          "bytes": 116148,
+          "sha256": "21CC2840F573C66698D6DCE1B26AF565D84A7596AA9DA339CEB07DAEFD06AB5B"
+        },
+        "grenade_normal.webp": {
+          "bytes": 43936,
+          "sha256": "AE608342E6DBC308789C9D14B4C4845EB8A7A9E30A8467401C7534C501D0465E"
+        },
+        "grenade_mr.webp": {
+          "bytes": 158618,
+          "sha256": "0D17813B5D2AE8C8267AFB43378D6978F295A82154ACEF12941F044058363729"
+        }
+      }
+    }
+  ],
+  "totals": {
+    "runtimeBytes": 2318939,
+    "triangles": 35951
+  }
+}

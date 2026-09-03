@@ -1,0 +1,325 @@
+{
+  "buildParameters": {
+    "indexEncoding": "uint16",
+    "normalAngleErrorLimitDegrees": 1.0,
+    "normalEncoding": "int8-snorm",
+    "positionEncoding": "uint16",
+    "positionErrorLimit": 2e-05,
+    "simplifier": "deterministic-uv-aware-vertex-cluster",
+    "targetTotalTriangles": 18000,
+    "targetTrianglesPerHand": 9000,
+    "textureQuality": {
+      "albedo": 86,
+      "mr": "lossless",
+      "normal": 90
+    },
+    "uvEncoding": "uint16"
+  },
+  "componentEvidence": {
+    "axis": "x",
+    "componentCount": 2,
+    "crossComponentFaces": 0,
+    "left": {
+      "allFacesContained": true,
+      "axis": "x",
+      "crossComponentFaces": 0,
+      "faceCount": 24906,
+      "positionCount": 12449,
+      "sign": "negative"
+    },
+    "right": {
+      "allFacesContained": true,
+      "axis": "x",
+      "crossComponentFaces": 0,
+      "faceCount": 25064,
+      "positionCount": 12530,
+      "sign": "positive"
+    }
+  },
+  "model": {
+    "file": "hands_model.js",
+    "hands": {
+      "left": {
+        "componentEvidence": {
+          "allCornersSameSign": true,
+          "axis": "x",
+          "sign": "negative",
+          "sourceTriangleCount": 24906
+        },
+        "handedness": "left",
+        "normalizedBounds": {
+          "max": [
+            0.24256649999999996,
+            0.0,
+            0.2291625
+          ],
+          "min": [
+            -0.24256650000000002,
+            -0.7044360000000001,
+            -0.2291625
+          ]
+        },
+        "outputBounds": {
+          "max": [
+            0.24222599999999997,
+            -0.0002894999999999981,
+            0.2291625
+          ],
+          "min": [
+            -0.24243750000000003,
+            -0.704323,
+            -0.2290025
+          ]
+        },
+        "outputTriangleCount": 8996,
+        "outputVertexCount": 6843,
+        "quantization": {
+          "index": "uint16",
+          "normal": {
+            "decode": "normalize(int8 / 127)",
+            "encoding": "int8-snorm",
+            "maxAngleErrorDegrees": 0.38021715435854864
+          },
+          "position": {
+            "encoding": "uint16",
+            "maxError": 5.371416037291965e-06,
+            "min": [
+              -0.24243750000000003,
+              -0.704323,
+              -0.2290025
+            ],
+            "scale": [
+              7.395490959029526e-06,
+              1.074286259250782e-05,
+              6.991149767299916e-06
+            ]
+          },
+          "uv": {
+            "encoding": "uint16",
+            "maxError": 7.623529411776575e-06,
+            "min": [
+              0.000392,
+              0.001173
+            ],
+            "scale": [
+              1.5247058823529413e-05,
+              1.5235156786449989e-05
+            ]
+          }
+        },
+        "simplification": {
+          "cellSize": 0.01669664394950867,
+          "method": "deterministic-uv-aware-vertex-cluster",
+          "sourceTriangles": 24906,
+          "targetTriangles": 9000
+        },
+        "sourceBounds": {
+          "max": [
+            -0.008166,
+            0.704469,
+            0.156827
+          ],
+          "min": [
+            -0.493299,
+            3.3e-05,
+            -0.301498
+          ]
+        },
+        "sourceChartCount": 414,
+        "sourceTriangleCount": 24906,
+        "sourceVertexCount": 16957,
+        "wristOrigin": [
+          -0.25073249999999997,
+          0.704469,
+          -0.0723355
+        ]
+      },
+      "right": {
+        "componentEvidence": {
+          "allCornersSameSign": true,
+          "axis": "x",
+          "sign": "positive",
+          "sourceTriangleCount": 25064
+        },
+        "handedness": "right",
+        "normalizedBounds": {
+          "max": [
+            0.24254,
+            0.0,
+            0.2292595
+          ],
+          "min": [
+            -0.24254,
+            -0.704521,
+            -0.2292595
+          ]
+        },
+        "outputBounds": {
+          "max": [
+            0.24228199999999997,
+            0.0,
+            0.2292595
+          ],
+          "min": [
+            -0.24224925,
+            -0.70339125,
+            -0.2292595
+          ]
+        },
+        "outputTriangleCount": 9000,
+        "outputVertexCount": 7000,
+        "quantization": {
+          "index": "uint16",
+          "normal": {
+            "decode": "normalize(int8 / 127)",
+            "encoding": "int8-snorm",
+            "maxAngleErrorDegrees": 0.3667323143496191
+          },
+          "position": {
+            "encoding": "uint16",
+            "maxError": 5.3662165255818906e-06,
+            "min": [
+              -0.24224925,
+              -0.70339125,
+              -0.2292595
+            ],
+            "scale": [
+              7.393472953383687e-06,
+              1.0733062485694667e-05,
+              6.996551461051346e-06
+            ]
+          },
+          "uv": {
+            "encoding": "uint16",
+            "maxError": 7.616891737449727e-06,
+            "min": [
+              0.001177,
+              0.000458
+            ],
+            "scale": [
+              1.5235080491340507e-05,
+              1.5222201876859694e-05
+            ]
+          }
+        },
+        "simplification": {
+          "cellSize": 0.01666956817229092,
+          "method": "deterministic-uv-aware-vertex-cluster",
+          "sourceTriangles": 25064,
+          "targetTriangles": 9000
+        },
+        "sourceBounds": {
+          "max": [
+            0.491495,
+            0.704521,
+            0.156804
+          ],
+          "min": [
+            0.006415,
+            -0.0,
+            -0.301715
+          ]
+        },
+        "sourceChartCount": 442,
+        "sourceTriangleCount": 25064,
+        "sourceVertexCount": 17271,
+        "wristOrigin": [
+          0.248955,
+          0.704521,
+          -0.0724555
+        ]
+      }
+    },
+    "quantized": true,
+    "triangleCount": 17996,
+    "vertexCount": 13843
+  },
+  "normalization": {
+    "localOrigin": "wrist-end at Y=0; X/Z centered by component bounds",
+    "preserveSourceWinding": true,
+    "wristAxis": "source-y-max"
+  },
+  "outputs": {
+    "hands_albedo.webp": {
+      "bytes": 151304,
+      "path": "hands_albedo.webp",
+      "sha256": "ea74703514fdd748153502dc5717f638d8552a747225f4fef499d4a3d070a8d8"
+    },
+    "hands_model.js": {
+      "bytes": 388480,
+      "path": "hands_model.js",
+      "sha256": "c2f8de4d93138a954a850005cb51b227a4f8ec401fca05bcc2cdf236b4042e9f"
+    },
+    "hands_mr.webp": {
+      "bytes": 210980,
+      "path": "hands_mr.webp",
+      "sha256": "03af9854c9fce4f05119416bc1850b071b093a924c08363c618b6dad1dbfdcfa"
+    },
+    "hands_normal.webp": {
+      "bytes": 118440,
+      "path": "hands_normal.webp",
+      "sha256": "342cec053f6b51135607d710f85693b640147d57c193d41cf751b15415e9915b"
+    },
+    "hands_tex.js": {
+      "bytes": 1808,
+      "path": "hands_tex.js",
+      "sha256": "af27ed4747691fb961ba99f3e460cb9d71d54886a7b8ca09910ffaba22412c71"
+    }
+  },
+  "pipeline": "hands-obj-quantized-rigid-v1",
+  "sourceDirectory": "archive/assets/hands/source-20260829",
+  "sourceHash": "3b4d53b98dfa965c64543ae6a9d351a04576cd2357dabebbe2be2fd08eaf8266",
+  "sourceHashes": {
+    "albedo": "da209274585b45ad65364f4e81fece28da369f91976684c2ff57138d329fb643",
+    "metallic": "dfd64ba1fcdef076f3bf3eb3ad3a7973ec2ff6c634b35f4328015118fd6c3cc2",
+    "mtl": "9850ae5248d6dbf106daf4d0ba88a74ecfab339015525940460521a52d6c17f9",
+    "normal": "f5801154a8ca0a5d470379c89c120647d589d39c31c23347f90abb14b33786c0",
+    "obj": "3b4d53b98dfa965c64543ae6a9d351a04576cd2357dabebbe2be2fd08eaf8266",
+    "roughness": "f7526bbdb791def1882171de355d305087cd5a0a7d73f8ac69a5425b3b93e824"
+  },
+  "sourceStats": {
+    "materials": 1,
+    "normals": 0,
+    "positions": 24979,
+    "triangles": 49970,
+    "uvs": 34228
+  },
+  "textures": {
+    "hands_albedo.webp": {
+      "bytes": 151304,
+      "colorSpace": "sRGB",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "format": "WEBP",
+      "sha256": "ea74703514fdd748153502dc5717f638d8552a747225f4fef499d4a3d070a8d8"
+    },
+    "hands_mr.webp": {
+      "bytes": 210980,
+      "channels": {
+        "b": "metallic",
+        "g": "roughness",
+        "r": "255"
+      },
+      "colorSpace": "none",
+      "dimensions": [
+        512,
+        512
+      ],
+      "format": "WEBP",
+      "sha256": "03af9854c9fce4f05119416bc1850b071b093a924c08363c618b6dad1dbfdcfa"
+    },
+    "hands_normal.webp": {
+      "bytes": 118440,
+      "colorSpace": "none; tangent-space normal",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "format": "WEBP",
+      "sha256": "342cec053f6b51135607d710f85693b640147d57c193d41cf751b15415e9915b"
+    }
+  },
+  "version": 1
+}

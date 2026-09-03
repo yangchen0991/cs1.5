@@ -1,0 +1,50 @@
+- generic [ref=e2]:
+  - generic [ref=e36]:
+    - heading "设置" [level=2] [ref=e37]
+    - generic [ref=e38]:
+      - generic [ref=e39]: 按钮大小
+      - slider "按钮大小" [ref=e40] [cursor=pointer]: "100"
+      - generic [ref=e41]: 100%
+    - generic [ref=e42]:
+      - generic [ref=e43]: 转身灵敏度
+      - slider "转身灵敏度" [ref=e44] [cursor=pointer]: "100"
+      - generic [ref=e45]: 100%
+    - button "自定义按钮位置" [ref=e46] [cursor=pointer]
+    - button "恢复默认布局" [ref=e47] [cursor=pointer]
+    - button "关闭" [ref=e48] [cursor=pointer]
+    - paragraph [ref=e49]: 自定义布局会保存在本机，随时可改
+  - generic:
+    - generic:
+      - generic:
+        - generic: ✚
+        - generic: "45"
+      - generic:
+        - generic: 🛡
+        - generic: "45"
+    - generic:
+      - generic: Glock-18
+      - generic: 20 / 120
+      - generic:
+        - generic [ref=e15] [cursor=pointer]: 1 Glock-18
+        - generic [ref=e16] [cursor=pointer]: 2 AK-47
+        - generic [ref=e17] [cursor=pointer]: 3 AWP
+    - generic:
+      - generic:
+        - generic: 敌人剩余
+        - generic: "5"
+      - generic: 回合 1
+      - generic:
+        - generic: 击杀
+        - generic: "0"
+    - generic: 第 1 关：5 名敌人
+    - generic:
+      - generic:
+        - button "FIRE" [ref=e19]
+        - button "跳" [ref=e20]
+        - button "蹲" [ref=e21]
+        - button "⟳" [ref=e22]
+        - button "换" [ref=e23]
+      - generic [ref=e24]:
+        - button "II" [ref=e25]
+        - button "⚙" [ref=e26]
+    - generic: 视口 360×732 | 内容 732×360 | 缩放 0.78 | 旋转 开 | DPR 3
