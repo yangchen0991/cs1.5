@@ -14,6 +14,28 @@ those win.
 - **Orbital agent:** cs15
 - **Workspace:** the directory this file sits in.
 
+## Mandatory Xiaohongshu minitool rules
+
+Before changing runtime code, packaging, platform integration, sharing, or compatibility behavior, read:
+
+1. `orbital/instructions/project_goals.md`
+2. `orbital/XHS_MINITOOL_CAPABILITY_LIST.md`
+3. `docs/小红书小工具开发规则-2026-09-01.md`
+
+The long-term capability baseline is the official Xiaohongshu minitool rules updated 2026-09-01. For every new creation/rewrite/upload cycle, the current upload-page prompt and its current `SKILL.md` take precedence over any stored historical Skill or reference.
+
+Hard boundaries for this repository:
+
+- Offline-only runtime. No network requests or external runtime assets.
+- Android minimum compatibility baseline: Android 8.1 / Chrome-WebView 61; release JavaScript must remain ES2017/Chrome 61 compatible and CSS must retain Chrome 61 functional fallbacks.
+- Classic external scripts only; no inline script, inline event handler, ES module, `eval`, `new Function`, WebAssembly, Worker/SharedWorker/ServiceWorker.
+- Do not use iframe/object, form navigation submission, download links/blob downloads, `target="_blank"`, outside navigation, popup windows, or inter-minitool navigation.
+- Do not add geolocation, clipboard, hardware-device APIs, sensors, WebRTC/WebSocket/SSE, screen sharing/fullscreen, credentials/locks, notification/payment/XR/PWA/background-sync paths, Pointer Lock or Keyboard Lock.
+- WebGL may use only packaged/local resources, Canvas and memory objects. Do not enable WASM acceleration, OffscreenCanvas+Worker, or SharedArrayBuffer multithreading. `three-mesh-bvh` must not use `useSharedArrayBuffer:true`.
+- Native API allowlist is exactly `window.xhs.miniTool.postNote`, `saveImageToPhotosAlbum`, and `writeTempFile` unless a newer current official Skill explicitly changes it. Never bridge directly with `postMessage`.
+- `postNote` success must not be treated as final review/publication success; album save must be user-triggered; `writeTempFile` paths are temporary and must not be persisted.
+- Before packaging, run compliance gates covering HTML/CSP, offline resources, banned APIs/behaviors, native API allowlist, Chrome 61 JavaScript/CSS compatibility, WebGL combination boundaries, ZIP extension allowlist and single HTML entry.
+
 ## The memory system
 
 Orbital is an agent orchestration platform: a management agent works on this
